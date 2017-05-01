@@ -38,18 +38,18 @@
     - 远程仓库: 非官方的maven仓库, 有java.net, 开源中国maven或自建
     - 中央仓库: 官方maven仓库
 * 当添加依赖时, 仓库的搜索顺序为: `本地仓库 > 中央仓库 > 远程仓库`
-	
+    
 ### 本地仓库
 
 * 用于存储所有项目的依赖关系到本地文件夹
 * 默认情况下, 本地仓库默认为`.m2`目录
-	- Uxin/OSX: `~/.m2`
-	- Windows: `C:\Documents and Settings\{your-username}\.m2`
+    - Uxin/OSX: `~/.m2`
+    - Windows: `C:\Documents and Settings\{your-username}\.m2`
 * 修改默认仓库为其他目录
-	- 编辑` {M2_HOME}\conf\setting.xml`文件
-	- 修改`<localRepository></localRepository>`的值为其他目录
-	- 执行`mvn archetype:generate -DgroupId=com.yiibai -DartifactId=NumberGenerator -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false`保存
-	
+    - 编辑` {M2_HOME}\conf\setting.xml`文件
+    - 修改`<localRepository></localRepository>`的值为其他目录
+    - 执行`mvn archetype:generate -DgroupId=com.yiibai -DartifactId=NumberGenerator -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false`保存
+    
 ### 远程仓库
 
 * 添加远程仓库: 在`pom.xml`文件中添加你需要的远程仓库
@@ -58,17 +58,17 @@
 pom.xml
 -------
 <project ...>
-	<repositories>
-		<!-- 添加远程仓库信息 -->
-		<repository>
-			<id>java.net</id>
-			<url>https://maven.java.net/content/repositories/public/</url>
-		</repository>
-		<repository>
-			<id>JBoss repository</id>
-			<url>http://repository.jboss.org/nexus/content/groups/public/</url>
-		</repository>
-	</repositories>
+    <repositories>
+        <!-- 添加远程仓库信息 -->
+        <repository>
+            <id>java.net</id>
+            <url>https://maven.java.net/content/repositories/public/</url>
+        </repository>
+        <repository>
+            <id>JBoss repository</id>
+            <url>http://repository.jboss.org/nexus/content/groups/public/</url>
+        </repository>
+    </repositories>
 </project>
 ```
 
@@ -91,9 +91,9 @@ pom.xml
 ```xml
 <dependencies>
     <dependency>
-		<groupId>log4j</groupId>
-		<artifactId>log4j</artifactId>
-		<version>1.2.14</version>
+        <groupId>log4j</groupId>
+        <artifactId>log4j</artifactId>
+        <version>1.2.14</version>
     </dependency>
 </dependencies>
 ```
@@ -139,18 +139,18 @@ project/
 * POM, Project Object Model, 对象项目模型, 是Maven的基本单位, 是一个XML文件, 保存在项目根目录下的`pom.xml`文件中
 * 每个项目应该有一个单一的POM文件
 * 所有POM文件项目元素必须有三个必填字段:
-	- groupId: 项目所属的组织的名称
-	- artifactId: 项目名
-	- version: 项目版本号
+    - groupId: 项目所属的组织的名称
+    - artifactId: 项目名
+    - version: 项目版本号
 * 配置包括:
-	- 依赖
-	- 插件
-	- 目标
-	- 构建配置
-	- 项目版本
-	- 开发人员
-	- 邮件列表
-	
+    - 依赖
+    - 插件
+    - 目标
+    - 构建配置
+    - 项目版本
+    - 开发人员
+    - 邮件列表
+    
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/
@@ -183,8 +183,8 @@ ttp://maven.apache.org/xsd/maven-4.0.0.xsd">
     </testResources>
     <directory>C:\MVN\project\target</directory>
     <finalName>project-1.0</finalName>
-	
-	<!-- 插件管理 -->
+    
+    <!-- 插件管理 -->
     <pluginManagement>
       <plugins>
         <plugin>
@@ -249,9 +249,9 @@ ttp://maven.apache.org/xsd/maven-4.0.0.xsd">
 |安装    |安装    |这一阶段在本地/远程Maven仓库安装程序包  |
 
 * clean生命周期(执行`mvn clean`)
-	- `pre-clean`
-	- `clean`
-	- `post-clean`
+    - `pre-clean`
+    - `clean`
+    - `post-clean`
 
 * 默认的生命周期(23个阶段):
 
@@ -304,11 +304,11 @@ mvn install
 
 * 用于针对不同的环境(开发/生产)来自定义构建
 * 配置文件有3种:
-	- 按项目配置: 定义在项目根目录的`pom.xml`
-	- 按用户配置: 定义在用户的Maven配置文件中(`%USER_HOME%/.m2/settings.xml`)
-	- 全局配置: 定义在全局的Maven配置文件中(`%M2_HOME%/conf/settings.xml`)
+    - 按项目配置: 定义在项目根目录的`pom.xml`
+    - 按用户配置: 定义在用户的Maven配置文件中(`%USER_HOME%/.m2/settings.xml`)
+    - 全局配置: 定义在全局的Maven配置文件中(`%M2_HOME%/conf/settings.xml`)
 
-	
+    
 ### 配置方式
 
 1. 配置pom.xml的profile
@@ -343,17 +343,17 @@ mvn install
 ```
 
 2. 创建配置文件
-	- 针对不同环境创建不同的配置文件, 配置文件都作为资源文件放在`src/main/resources`目录下. 配置文件使用键值对编写一些变量的配置参数
-		- `env-dev.properties`: 开发环境
-		- `env-test.properties`: 测试环境
-		- `env-product.properties`: 生产环境
+    - 针对不同环境创建不同的配置文件, 配置文件都作为资源文件放在`src/main/resources`目录下. 配置文件使用键值对编写一些变量的配置参数
+        - `env-dev.properties`: 开发环境
+        - `env-test.properties`: 测试环境
+        - `env-product.properties`: 生产环境
 
 3. 配置构建资源
 
 ```xml
 <build>
 　　<filters>
-		<filter>${project.basedir}/src/main/resources/environment/env-${profiles.active}.properties</filter>
+        <filter>${project.basedir}/src/main/resources/environment/env-${profiles.active}.properties</filter>
 　　</filters>
 　　<resources>
     　　<resource>
