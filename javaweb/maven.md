@@ -34,11 +34,11 @@
 ## maven仓库
 
 * 3种仓库
-    - 本地仓库: 本地电脑的仓库, 
-    - 远程仓库: 非官方的maven仓库, 有java.net, 开源中国maven或自建
-    - 中央仓库: 官方maven仓库
+    - 本地仓库(local): 本地电脑的仓库
+    - 中央仓库(central): 官方maven仓库
+    - 远程仓库(remote): 非官方的maven仓库, 有java.net, 开源中国maven或自建
 * 当添加依赖时, 仓库的搜索顺序为: `本地仓库 > 中央仓库 > 远程仓库`
-    
+
 ### 本地仓库
 
 * 用于存储所有项目的依赖关系到本地文件夹
@@ -49,7 +49,7 @@
     - 编辑` {M2_HOME}\conf\setting.xml`文件
     - 修改`<localRepository></localRepository>`的值为其他目录
     - 执行`mvn archetype:generate -DgroupId=com.yiibai -DartifactId=NumberGenerator -DarchetypeArtifactId=maven-archetype-quickstart -DinteractiveMode=false`保存
-    
+
 ### 远程仓库
 
 * 添加远程仓库: 在`pom.xml`文件中添加你需要的远程仓库
@@ -150,7 +150,7 @@ project/
     - 项目版本
     - 开发人员
     - 邮件列表
-    
+
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/
@@ -161,7 +161,7 @@ ttp://maven.apache.org/xsd/maven-4.0.0.xsd">
   <groupId>com.companyname.project-group</groupId>
   <artifactId>project</artifactId>
   <version>1.0</version>
-  
+
   <!-- 构建信息 -->
   <build>
     <sourceDirectory>C:\MVN\project\src\main\java</sourceDirectory>
@@ -183,7 +183,7 @@ ttp://maven.apache.org/xsd/maven-4.0.0.xsd">
     </testResources>
     <directory>C:\MVN\project\target</directory>
     <finalName>project-1.0</finalName>
-    
+
     <!-- 插件管理 -->
     <pluginManagement>
       <plugins>
@@ -198,7 +198,7 @@ ttp://maven.apache.org/xsd/maven-4.0.0.xsd">
       </plugins>
     </pluginManagement>
   </build>
-  
+
   <!-- 仓库管理 -->
   <repositories>
     <repository>
@@ -210,7 +210,7 @@ ttp://maven.apache.org/xsd/maven-4.0.0.xsd">
       <url>http://repo1.maven.org/maven2</url>
     </repository>
   </repositories>
-  
+
   <!-- 插件仓库 -->
   <pluginRepositories>
     <pluginRepository>
@@ -225,7 +225,7 @@ ttp://maven.apache.org/xsd/maven-4.0.0.xsd">
       <url>http://repo1.maven.org/maven2</url>
     </pluginRepository>
   </pluginRepositories>
-  
+
   <!-- 报告生成目录 -->
   <reporting>
     <outputDirectory>C:\MVN\project\target/site</outputDirectory>
@@ -239,7 +239,7 @@ ttp://maven.apache.org/xsd/maven-4.0.0.xsd">
 * 生命周期设置构建项目的执行顺序
 
 
-* 典型的Maven生命周期: 
+* 典型的Maven生命周期:
 
 |阶段    |处理    |描述                                    |
 |--------|--------|----------------------------------------|
@@ -308,7 +308,7 @@ mvn install
     - 按用户配置: 定义在用户的Maven配置文件中(`%USER_HOME%/.m2/settings.xml`)
     - 全局配置: 定义在全局的Maven配置文件中(`%M2_HOME%/conf/settings.xml`)
 
-    
+
 ### 配置方式
 
 1. 配置pom.xml的profile
@@ -372,3 +372,118 @@ mvn package -Pdev      # 开发环境
 mvn package -Ptest     # 测试环境
 mvn package -Pproduct  # 生产环境
 ```
+
+
+## Maven插件
+
+* Maven是一个执行插件的框架, 每个任务实际上是由插件完成的
+* 插件通常用于:
+    - 创建jar文件
+    - 创建war文件
+    - 编译代码文件
+    - 执行代码单元测试
+    - 创建项目文档
+    - 创建项目报告
+* 一个插件通常提供了一组目标
+    - 执行语法: `mvn [plugin-name]:[goal-name]`
+    - 例如编译命令: `mvn compiler:compile`
+* 插件类型:
+    - 构建插件: 在生成过程中执行, 并在`pom.xml`中的`<build/>`标签进行配置
+    - 报告插件: 在网站生成期间执行, 在`pom.xml`中的`<reporting/>`标签进行配置
+* 常见插件:
+    - clean: 编译后的清理目标, 删除目标目录
+    - compiler: 编译Java源文件
+    - surefile: 运行JUnit单元测试, 创建测试报告
+    - jar: 从当前项目构建JAR文件
+    - war: 从当前项目构建WAR文件
+    - javadoc: 生成该项目的文档
+    - antrun: 从构建所述的任何阶段运行一组Ant任务
+
+### 插件运行示例
+
+* 首先创建`pom.xml`文件, 编写如下内容
+
+```xml
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+    http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<modelVersion>4.0.0</modelVersion>
+<groupId>com.companyname.projectgroup</groupId>
+<artifactId>project</artifactId>
+<version>1.0</version>
+<build>
+<plugins>
+   <plugin>
+   <groupId>org.apache.maven.plugins</groupId>
+   <artifactId>maven-antrun-plugin</artifactId>
+   <version>1.1</version>
+   <executions>
+      <execution>
+         <id>id.clean</id>
+         <phase>clean</phase>
+         <goals>
+            <goal>run</goal>
+         </goals>
+         <configuration>
+            <tasks>
+               <echo>clean phase</echo>
+            </tasks>
+         </configuration>
+      </execution>     
+   </executions>
+   </plugin>
+</plugins>
+</build>
+</project>
+```
+
+* 运行clean命令
+
+```shell
+# 执行clean命令
+mvn clean
+```
+
+* 查看命令运行结果
+
+```text
+# 输出内容
+[INFO] Scanning for projects...
+[INFO] ------------------------------------------------------------------
+[INFO] Building Unnamed - com.companyname.projectgroup:project:jar:1.0
+[INFO]    task-segment: [post-clean]
+[INFO] ------------------------------------------------------------------
+[INFO] [clean:clean {execution: default-clean}]
+[INFO] [antrun:run {execution: id.clean}]
+[INFO] Executing tasks
+     [echo] clean phase
+[INFO] Executed tasks
+[INFO] ------------------------------------------------------------------
+[INFO] BUILD SUCCESSFUL
+[INFO] ------------------------------------------------------------------
+[INFO] Total time: < 1 second
+[INFO] Finished at: Sat Jul 07 13:38:59 IST 2012
+[INFO] Final Memory: 4M/44M
+[INFO] ------------------------------------------------------------------
+```
+
+
+## Maven脚手架 - archetype
+
+* `archetype`插件是专门用来创建项目的脚手架
+* maven提供了多种现成的脚手架, 用于创建不同的项目; 我们也可以自定义脚手架来创建自定义的项目结构
+    - 现成的脚手架:
+        - 普通Java项目: `org.apache.maven.archetypes:maven-archetype-quickstart`
+        - 网站项目: `org.apache.maven.archetypes:maven-archetype-site`
+        - Web应用项目: `org.apache.maven.archetypes:maven-archetype-webapp`
+    - 自定义脚手架
+        - 创建自定义脚手架的方式有2种
+            - 从现有项目结构导出
+                - 准备好项目结构
+                - 在项目根目录运行: `mvn archetype:create-from-project`
+                - 在项目目录下的`{project}/target/generated-sources/archetype/`目录下生成了`maven-metadata.xml`项目描述文件
+            - 自定义archetype描述文件
+        - 使用自定义脚手架:
+            - 在脚手架所在目录执行: `mvn install`安装
+            - 新建maven项目, 即可看到导入的脚手架
