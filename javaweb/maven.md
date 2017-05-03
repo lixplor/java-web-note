@@ -477,6 +477,12 @@ mvn clean
         - 普通Java项目: `org.apache.maven.archetypes:maven-archetype-quickstart`
         - 网站项目: `org.apache.maven.archetypes:maven-archetype-site`
         - Web应用项目: `org.apache.maven.archetypes:maven-archetype-webapp`
+        - 使用现成的脚手架:
+            - 项目根目录执行`mvn archetype:generate`, maven会联网搜索远程的模板并列出, 输入模板编号
+            - maven会提示选择该模板的版本号, 输入版本号
+            - maven会提示输入项目的详细信息
+            - maven会让你确认项目信息
+            - maven执行创建
     - 自定义脚手架
         - 创建自定义脚手架的方式有2种
             - 从现有项目结构导出
@@ -487,3 +493,113 @@ mvn clean
         - 使用自定义脚手架:
             - 在脚手架所在目录执行: `mvn install`安装
             - 新建maven项目, 即可看到导入的脚手架
+
+
+## Maven依赖管理
+
+* `<dependencies></dependencies>`: 用于声明依赖的配置
+    - `<dependency></dependency>`: 用于添加一个单独的依赖
+        - `<groupId></groupId>`: 依赖的组织名称
+        - `<artifactId></artifactId>`: 依赖的名称
+        - `<version></version>`: 依赖的版本号
+        - `<scope></scope>`: 依赖的作用范围
+            - `compile`: 默认值, 编译范围内有效, 编译和打包都使用, 适用于所有阶段
+            - `provided`: 类似compile, 编译和测试有效, 打包不会使用. 期望JDK, 容器或使用者已经提供这个依赖, 比如打包上传到Tomcat中, Tomcat已经存在了Servlet.jar
+            - `runtime`: 只在运行时使用, 编译时候不使用. 适用于运行和测试阶段
+            - `test`: 只在测试时使用, 用于编译和运行测试代码, 编译和打包都不使用, 不会随项目发布
+            - `system`: 类似provided, 需要显式提供(手动导入)包含依赖的jar, maven不会再仓库中寻找
+            - `import`: 只能用于`<dependencyManagement></dependencyManagement>`标签中, 用于从其他pom中导入dependency的配置
+        - `<systemPath></systemPath>`: 依赖文件的所在路径, 一般配合`system`的scope使用
+
+```xml
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+   http://maven.apache.org/maven-v4_0_0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+   <groupId>com.companyname.bank</groupId>
+   <artifactId>consumerBanking</artifactId>
+   <packaging>jar</packaging>
+   <version>1.0-SNAPSHOT</version>
+   <name>consumerBanking</name>
+   <url>http://maven.apache.org</url>
+
+   <!-- 所有依赖 -->
+   <dependencies>
+      <!-- 单个依赖 -->
+      <dependency>
+         <groupId>junit</groupId>
+         <artifactId>junit</artifactId>
+         <version>3.8.1</version>
+         <scope>test</scope>
+      </dependency>
+
+      <!-- 单个依赖 -->
+      <dependency>
+         <groupId>ldapjdk</groupId>
+         <artifactId>ldapjdk</artifactId>
+         <scope>system</scope>
+         <version>1.0</version>
+         <systemPath>${basedir}\src\lib\ldapjdk.jar</systemPath>
+      </dependency>
+   </dependencies>
+
+</project>
+```
+
+
+## Maven快照(SNAPSHOT)
+
+* SNAPSHOT指的是一个特殊的版本, 代表目前开发版本的副本.
+* 快照不同于常规版本, maven每生成一个远程存储库都会检查新的快照版本
+* 快照的作用:
+    - 如果使用普通版本, 如`data-service:1.0`, 那么在本地已经下载了该依赖的情况下, 当远程仓库的1.0版本已经有了更新, 那么本地也不会再去下载新的依赖, 除非你提升版本号
+    - 如果使用快照版本, 如`data-service:1.0-SNAPSHOT`, 则每次构建时都会自动获取最新的快照版本
+
+* 定义项目为SNAPSHOT版本
+
+```xml
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+    http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>data-service</groupId>
+    <artifactId>data-service</artifactId>
+    <version>1.0-SNAPSHOT</version>   <!-- 这里定义快照 -->
+    <packaging>jar</packaging>
+    <name>health</name>
+    <url>http://maven.apache.org</url>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+</project>
+```
+
+* 添加快照版本依赖
+
+```xml
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+   http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+   <groupId>app-ui</groupId>
+   <artifactId>app-ui</artifactId>
+   <version>1.0</version>
+   <packaging>jar</packaging>
+   <name>health</name>
+   <url>http://maven.apache.org</url>
+   <properties>
+      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+   </properties>
+   <dependencies>
+      <dependency>
+      <groupId>data-service</groupId>
+         <artifactId>data-service</artifactId>
+         <version>1.0-SNAPSHOT</version>  <!-- 添加了快照版本的依赖 -->
+         <scope>test</scope>
+      </dependency>
+   </dependencies>
+</project>
+```
