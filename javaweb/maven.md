@@ -280,26 +280,6 @@ ttp://maven.apache.org/xsd/maven-4.0.0.xsd">
 |deploy               |复制最终的包到远程仓库与其他开发者和项目共享             |
 
 
-## maven命令
-
-```shell
-# 清理项目
-mvn clean
-
-# 编译项目
-mvn compile
-
-# 测试
-mvn test
-
-# 打包
-mvn package
-
-# 打jar包或war包或发布到本地仓库
-mvn install
-```
-
-
 ## Maven构建环境配置
 
 * 用于针对不同的环境(开发/生产)来自定义构建
@@ -475,7 +455,7 @@ mvn clean
 * maven提供了多种现成的脚手架, 用于创建不同的项目; 我们也可以自定义脚手架来创建自定义的项目结构
     - 现成的脚手架:
         - 普通Java项目(最终生成jar文件): `org.apache.maven.archetypes:maven-archetype-quickstart`
-        - 网站项目: `org.apache.maven.archetypes:maven-archetype-site`
+        - 项目站点: `org.apache.maven.archetypes:maven-archetype-site`
         - Web应用项目(最终生成war文件): `org.apache.maven.archetypes:maven-archetype-webapp`
         - 使用现成的脚手架:
             - 互动方式:
@@ -610,9 +590,29 @@ mvn clean
 ```
 
 
-## Maven构建项目
+## maven命令
 
-* 打包: 在`pom.xml`中的`<project></project>`标签内, 配置`<packaging></packaging>`标签, 值为`jar`则生成jar文件, 值为`war`则生成war文件
+```shell
+# 清理项目
+mvn clean
+
+# 编译项目
+mvn compile
+
+# 测试
+mvn test
+
+# 打包
+mvn package
+
+# 打jar包或war包或发布到本地仓库
+mvn install
+```
+
+### Maven构建项目
+
+* 命令: `mvn package`
+* 配置生成的文件类型: 在`pom.xml`中的`<project></project>`标签内, 配置`<packaging></packaging>`标签, 值为`jar`则生成jar文件, 值为`war`则生成war文件
 
 ```xml
 <!-- jar包 -->
@@ -635,8 +635,117 @@ mvn clean
 ```
 
 
-## Maven清理项目
+### Maven清理项目
 
+* 命令: `mvn clean`. 执行后`target`目录会被删除
 * maven构建后会生成很多文件在`target`目录中, 如果执行新的构建, 则需要先清理该目录中的缓存文件.
-* 清理命令: `mvn clean`. 执行后`target`目录会被删除
 * 建议打包时使用: `mvn clean package`, 即先清理, 再打包, 保证数据都是最新的
+
+
+### Maven单元测试
+
+* 命令:
+    - `mvn test`
+    - 指定测试的类: `mvn -Dtest={类} test`
+
+
+### Maven部署到本地资源库
+
+* 命令: `mvn install`
+* 建议与清理一起执行: `mvn clean install`
+
+
+### 生成项目的文档站点
+
+* 命令: `mvn site`
+* 生成的站点文件会在`target/site`目录中
+* 该站点文件是描述项目的一些信息, 类似与文档信息
+
+
+### 将文档站点部署到服务器
+
+* 命令: `mvn site:deploy`
+* 使用WebDAV机制, 需要验证信息
+* 部署的配置:
+    - 注意`dav:`前缀要添加在HTTP协议前
+
+```xml
+pom.xml配置服务器信息
+--------------------
+<distributionManagement>
+    <site>
+        <id>yiibaiserver</id>
+        <url>dav:http://127.0.0.1/sites/</url>
+    </site>
+</distributionManagement>
+
+settings.xml配置WebDAV认证信息
+-----------------------------
+<servers>
+	<server>
+		<id>yiibaiserver</id>
+		<username>admin</username>
+		<password>123456</password>
+	</server>
+</servers>
+```
+
+
+## 使用Maven部署war文件到Tomcat
+
+* 在Tomcat中添加用户
+
+```xml
+<?xml version='1.0' encoding='utf-8'?>
+<tomcat-users>
+
+	<role rolename="manager-gui"/>
+	<role rolename="manager-script"/>
+	<user username="admin" password="password" roles="manager-gui,manager-script" />
+
+</tomcat-users>
+```
+
+* 在项目中创建配置文件, 设置认证信息
+
+```xml
+%MAVEN_PATH%/conf/settings.xml
+------------------------------
+<?xml version="1.0" encoding="UTF-8"?>
+<settings ...>
+	<servers>
+
+		<server>
+			<id>TomcatServer</id>
+			<username>admin</username>
+			<password>password</password>
+		</server>
+
+	</servers>
+</settings>
+```
+
+* 在`pom.xml`中添加Tomcat的maven插件
+
+```xml
+pom.xml
+-------
+<plugin>
+    <groupId>org.apache.tomcat.maven</groupId>
+    <artifactId>tomcat7-maven-plugin</artifactId>
+    <version>2.2</version>
+    <configuration>
+        <url>http://localhost:8080/manager/text</url>
+        <server>TomcatServer</server>
+        <path>/yiibaiWebApp</path>
+    </configuration>
+</plugin>
+```
+
+* 执行远程部署命令
+
+```shell
+mvn tomcat7:deploy    # 首次部署时使用
+mvn tomcat7:undeploy  # 取消部署
+mvn tomcat7:redeploy  # 再次部署时使用
+```
