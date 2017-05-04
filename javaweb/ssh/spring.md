@@ -5,9 +5,40 @@
 * 核心: IOC, AOP
 
 
-## 下载安装
+## 框架体系结构
 
-* 官网[http://projects.spring.io/spring-framework/](http://projects.spring.io/spring-framework/)
+* Spring框架提供20多个模块, 可根据程序要求引入需要的模块
+    - 核心容器(Core Container)
+        - Core: 框架基本组成部分, 包括IoC和依赖注入功能
+        - Bean: 提供BeanFactory, 是一个工厂模式的复杂实现
+        - Context: 是访问定义和配置的任何对象的媒介. ApplicationContext接口是Context的重点
+        - SpEL: 提供了查询和操作一个对象图的表达式语言
+    - 数据访问/集成(Data Access/Integration)
+        - JDBC: 提供了JDBC抽象层
+        - ORM: 对象关系映射API, 包括JPA, JDO, Hibernate, iBatis
+        - OXM: 支持对JAXB, Castor, XMLBeans, JiBX, XStream的对象/XML映射
+        - JMS: Java消息服务, 包含生产和消费的信息
+        - Transaction: 为实现特殊接口的类和所有的POJO支持编程式和声明式的事务管理
+    - Web
+        - Web: 基本的面向Web集成功能
+        - Web-MVC: 包含Spring MVC
+        - Web-Socket: socket通信
+        - Web-Portlet: 在portlet环境中实现MVC
+    - 其他
+        - AOP: 提供面向切面的编程实现
+        - Aspects: 提供与AspectJ的集成, 这是一个成熟的AOP框架
+        - Instrumentation: 提供类instumentation的支持和类加载器的实现
+        - Messaging: 为STOMP提供了WebSocket协议
+        - Test: 支持对具有JUnit或TestNG框架的Spring组件测试
+
+![Spring框架结构图](http://img.w3cschool.cn/attachments/image/wk/wkspring/arch1.png)
+
+
+
+## 环境配置
+
+* JDK
+* Spring框架[http://projects.spring.io/spring-framework/](http://projects.spring.io/spring-framework/)
 
 
 ## 配置log4j
@@ -86,11 +117,457 @@ usi.saveUser();
     - `destroy-method`: 当bean从容器中删除的时候调用destroy-method属性指定的方法
 
 
-## IOC 控制翻转
+## IOC容器
 
 * IOC, Inverse of Control, 控制翻转. 将对象的创建权反转给框架, 实现解耦
 * 实现方式:
     - `业务代码`和`资源`通过中间的`工厂类`和`配置文件`控制, 实现解耦
+* Spring容器是Spring框架的核心. 容器会创建对象, 把他们链接在一起, 配置他们, 并管理他们的整个生命周期
+* Spring容器使用依赖注入(DI)来管理组成一个应用程序的组件, 这些对象被称为`Spring Beans`
+* 通过配置, 容器知道对哪些对象进行实例化, 配置和组装. 配置可以通过`XML`, ``注解``或``代码``来实现
+* Spring提供了2种不同类型的容器:
+    1. Spring BeanFactory容器: 为DI提供基本的支持, 使用`org.springframework.beans.factory.BeanFactory`接口来定义
+    2. Spring ApplicationContext容器: 添加了更多的企业特定的功能, 由`org.springframework.context.ApplicationContext`接口定义
+        - ApplicationContext容器包括BeanFactory容器的所有功能, 所以建议使用ApplicationContext
+
+![Spring容器工作图](http://img.w3cschool.cn/attachments/image/wk/wkspring/ioc1.jpg)
+
+### Spring BeanFactory容器
+
+* 最简单的容器, 主要为依赖注入(DI)提供支持
+* 使用`org.springframework.beans.factory.BeanFactory`接口来定义
+* Spring中有大量对BeanFactory的实现, 如`XmlBeanFactory`类, 该容器从XML文件读取配置, 生成一个配置后的系统或应用
+
+#### 使用BeanFactory的示例
+
+* 步骤
+    1. 创建一个名为`SpringExample`的工程并在`src`文件夹下新建一个名为`com.tutorialspoint`文件夹
+    2. 点击右键, 选择 `Add External JARs` 选项, 导入 Spring 的库文件
+    3. 在 `com.tutorialspoint` 文件夹下创建 `HelloWorld.java` 和 `MainApp.java` 两个类文件
+    4. 在 `src` 文件夹下创建 `Bean` 的配置文件 `Beans.xml`
+    5. 最后的步骤是创建所有 Java 文件和 Bean 的配置文件的内容, 按照如下所示步骤运行应用程序
+* 解释:
+    - 使用`XmlBeanFactory`来加载xml配置
+    - 通过`XmlBeanFactory`的`getBean(String id)`方法来创建JavaBean
+    - 这就是IoC, 我们并没有直接在类中new对象, 而是通过一个XML文件, 将Bean和要使用Bean对象的地方连接起来, 达到解耦的目的
+* 示例
+
+```xml
+Beans.xml
+---------
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+   <bean id="helloWorld" class="com.tutorialspoint.HelloWorld">
+       <property name="message" value="Hello World!"/>
+   </bean>
+
+</beans>
+```
+
+```java
+HelloWorld.java
+---------------
+package com.tutorialspoint;
+
+public class HelloWorld {
+   private String message;
+   public void setMessage(String message){
+       this.message  = message;
+   }
+   public void getMessage(){
+       System.out.println("Your Message : " + message);
+   }
+}
+```
+
+```java
+MainApp.java
+------------
+package com.tutorialspoint;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.xml.XmlBeanFactory;
+import org.springframework.core.io.ClassPathResource;
+
+public class MainApp {
+   public static void main(String[] args) {
+      XmlBeanFactory factory = new XmlBeanFactory(new ClassPathResource("Beans.xml"));
+      HelloWorld obj = (HelloWorld) factory.getBean("helloWorld");
+      obj.getMessage();
+   }
+}
+```
+
+### Spring ApplicationContext容器
+
+* 是一个较高级的容器, 和BeanFactory类似, 用于加载配置文件中定义的Bean
+* 还增加了企业所需要的功能, 如从属性文件解析文本信息, 将时间传递给指定的监听器
+* 由`org.springframework.context.ApplicationContext`接口定义
+* 常用的ApplicationContext实现类:
+    - `FileSystemXmlApplicationContext`: 从XML文件中加载被定义的Bean. 需要提供XML文件的完整路径
+    - `ClassPathXmlApplicationContext`: 从XML文件中加载被定义的Bean. 不用提供XML文件的完整路径, 只需要配置Classpath即可
+    - `WebXmlApplicationContext`: 在Web应用程序的范围内加载XML文件中被定义的Bean
+
+#### 使用ApplicationContext的示例
+
+* 步骤:
+    1. 创建一个名为 `SpringExample` 的工程, 在 `src` 下新建一个名为 `com.tutorialspoint` 的文件夹`src`
+    2. 点击右键, 选择 `Add External JARs` 选项, 导入 Spring 的库文件
+    3. 在 `com.tutorialspoint` 文件夹下创建 `HelloWorld.java` 和 `MainApp.java` 两个类文件
+    4. 文件夹下创建 Bean 的配置文件 `Beans.xml`
+    5. 最后的步骤是编辑所有 JAVA 文件的内容和 Bean 的配置文件, 按照以前我们讲的那样去运行应用程序
+* 解释
+    - 使用`FileSystemXmlApplicationContext`来加载xml配置
+    - 通过`FileSystemXmlApplicationContext`的`getBean(String id)`方法来创建JavaBean
+    - 这就是IoC, 我们并没有直接在类中new对象, 而是通过一个XML文件, 将Bean和要使用Bean对象的地方连接起来, 达到解耦的目的
+* 示例
+
+```xml
+Beans.xml
+---------
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+   <bean id="helloWorld" class="com.tutorialspoint.HelloWorld">
+       <property name="message" value="Hello World!"/>
+   </bean>
+
+</beans>
+```
+
+```java
+HelloWorld.java
+---------------
+package com.tutorialspoint;
+public class HelloWorld {
+   private String message;
+   public void setMessage(String message){
+      this.message  = message;
+   }
+   public void getMessage(){
+      System.out.println("Your Message : " + message);
+   }
+}
+```
+
+```java
+MainApp.java
+------------
+package com.tutorialspoint;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.FileSystemXmlApplicationContext;
+public class MainApp {
+   public static void main(String[] args) {
+      ApplicationContext context = new FileSystemXmlApplicationContext
+            ("C:/Users/ZARA/workspace/HelloSpring/src/Beans.xml");
+      HelloWorld obj = (HelloWorld) context.getBean("helloWorld");
+      obj.getMessage();
+   }
+}
+```
+
+### Bean的定义
+
+* Bean对象通过IoC容器来管理
+* 所有的Bean都由容器提供的配置文件来创建, 即在XML中定义
+* Bean的配置信息包括:
+    - `class`属性: 必须. 指定创建bean的类名
+    - `name`属性: 指定唯一的bean标识符. 与id类似
+    - `scope`属性: 必须. 指定由特定bean定义创建对象的作用域
+    - `constructor-arg`: 用于注入依赖关系
+    - `properties`: 用于注入依赖关系
+    - `autowiring mode`: 用于注入依赖关系
+    - `lazy-initialization mode`: 延迟初始化bean, 也就是在第一次请求时创建一个bean实例, 而不是在启动时创建
+    - `initialization`(`init-method`): 在bean的所有必须的属性被容器设置之后, 调用回调方法
+    - `destruction`(`destroy-method`): 当包含该bean的容器被销毁时, 使用回调方法
+* 配置Bean有3种方式:
+    - XML配置文件
+    - 注解
+    - Java代码
+
+* XML配置示例
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+   <!-- A simple bean definition -->
+   <bean id="..." class="...">
+       <!-- collaborators and configuration for this bean go here -->
+   </bean>
+
+   <!-- A bean definition with lazy init set on -->
+   <bean id="..." class="..." lazy-init="true">
+       <!-- collaborators and configuration for this bean go here -->
+   </bean>
+
+   <!-- A bean definition with initialization method -->
+   <bean id="..." class="..." init-method="...">
+       <!-- collaborators and configuration for this bean go here -->
+   </bean>
+
+   <!-- A bean definition with destruction method -->
+   <bean id="..." class="..." destroy-method="...">
+       <!-- collaborators and configuration for this bean go here -->
+   </bean>
+
+   <!-- more bean definitions go here -->
+
+</beans>
+```
+
+### Bean的作用域
+
+* 定义bean时, 必须声明作用域
+* 5个作用域:
+    - `singleton`: 该作用域将 bean 的定义的限制在每一个 Spring IoC 容器中的一个单一实例(默认)
+    - `prototype`: 该作用域将单一 bean 的定义限制在任意数量的对象实例
+    - `request`: 该作用域将 bean 的定义限制为 HTTP 请求. 只在 web-aware Spring ApplicationContext 的上下文中有效
+    - `session`: 该作用域将 bean 的定义限制为 HTTP 会话. 只在web-aware Spring ApplicationContext的上下文中有效
+    - `global-session`: 该作用域将 bean 的定义限制为全局 HTTP 会话. 只在 web-aware Spring ApplicationContext 的上下文中有效
+
+### Bean的生命周期回调
+
+* 初始化回调: `void afterPropertiesSet() throws Exception;`, 可在其中进行初始化操作
+* 销毁回调: `void destroy() throws Exception;`, 可在对象销毁后进行一些收尾工作
+* 配置默认初始化和销毁回调方法:
+    - 我们可以通过默认配置来为所有Bean配置相同方法名的回调方法
+    - `default-init-method`: 默认的初始化回调
+    - `default-destroy-method`: 默认的销毁回调
+
+```xml
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd"
+    default-init-method="init"
+    default-destroy-method="destroy">
+
+   <bean id="..." class="...">
+       <!-- collaborators and configuration for this bean go here -->
+   </bean>
+
+</beans>
+```
+
+
+#### 使用IoC方式定义回调方法
+
+* 解释:
+    - 我们在xml中配置了:
+        - 当对象创建时, 调用对象的`init()`方法
+        - 当对象销毁时, 调用对象的`destroy()`方法
+* 示例:
+
+```xml
+Beans.xml
+---------
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+   <bean id="helloWorld"
+       class="com.tutorialspoint.HelloWorld"
+       init-method="init" destroy-method="destroy">
+       <property name="message" value="Hello World!"/>
+   </bean>
+
+</beans>
+```
+
+```java
+HelloWorld.java
+---------------
+package com.tutorialspoint;
+
+public class HelloWorld {
+   private String message;
+
+   public void setMessage(String message){
+      this.message  = message;
+   }
+   public void getMessage(){
+      System.out.println("Your Message : " + message);
+   }
+   public void init(){
+      System.out.println("Bean is going through init.");
+   }
+   public void destroy(){
+      System.out.println("Bean will destroy now.");
+   }
+}
+```
+
+```java
+MainApp.java
+------------
+package com.tutorialspoint;
+import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+public class MainApp {
+   public static void main(String[] args) {
+      AbstractApplicationContext context = new ClassPathXmlApplicationContext("Beans.xml");
+      HelloWorld obj = (HelloWorld) context.getBean("helloWorld");
+      obj.getMessage();
+      context.registerShutdownHook();
+   }
+}
+```
+
+### Bean的后置处理器
+
+* `BeanPostProcessor`接口也是定义回调方法的, 用于在所有的bean实例化的前后进行回调
+* 对所有bean都生效
+
+#### 使用BeanPostProcessor进行回调
+
+* 解释
+    - 定义了`InitHelloWorld`类, 实现了`BeanPostProcessor`接口, 重写了两个回调方法
+    - 在xml中声明了`InitHelloWorld`这个处理器
+    - 在创建所有的bean的前后时机, 都会调用两个回调
+* 示例
+
+```xml
+Beans.xml
+---------
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+   <bean id="helloWorld" class="com.tutorialspoint.HelloWorld"
+       init-method="init" destroy-method="destroy">
+       <property name="message" value="Hello World!"/>
+   </bean>
+
+   <bean class="com.tutorialspoint.InitHelloWorld" />
+
+</beans>
+```
+
+```java
+HelloWorld.java
+---------------
+package com.tutorialspoint;
+public class HelloWorld {
+   private String message;
+   public void setMessage(String message){
+      this.message  = message;
+   }
+   public void getMessage(){
+      System.out.println("Your Message : " + message);
+   }
+   public void init(){
+      System.out.println("Bean is going through init.");
+   }
+   public void destroy(){
+      System.out.println("Bean will destroy now.");
+   }
+}
+```
+
+```java
+InitHelloWorld.java
+-------------------
+package com.tutorialspoint;
+import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.beans.BeansException;
+public class InitHelloWorld implements BeanPostProcessor {
+   public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
+      System.out.println("BeforeInitialization : " + beanName);
+      return bean;  // you can return any other object as well
+   }
+   public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+      System.out.println("AfterInitialization : " + beanName);
+      return bean;  // you can return any other object as well
+   }
+}
+```
+
+```java
+MainApp.java
+------------
+package com.tutorialspoint;
+import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+public class MainApp {
+   public static void main(String[] args) {
+      AbstractApplicationContext context = new ClassPathXmlApplicationContext("Beans.xml");
+      HelloWorld obj = (HelloWorld) context.getBean("helloWorld");
+      obj.getMessage();
+      context.registerShutdownHook();
+   }
+}
+```
+
+### Bean的继承
+
+* Spring Bean的继承与Java类的继承无关, 但继承的概念是一样的. 用于将一个父bean作为模板, 继承所需的配置
+* 使用`parent`属性来声明要继承的bean
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+   <bean id="helloWorld" class="com.tutorialspoint.HelloWorld">
+      <property name="message1" value="Hello World!"/>
+      <property name="message2" value="Hello Second World!"/>
+   </bean>
+
+   <bean id="helloIndia" class="com.tutorialspoint.HelloIndia" parent="helloWorld">
+      <property name="message1" value="Hello India!"/>
+      <property name="message3" value="Namaste India!"/>
+   </bean>
+
+</beans>
+```
+
+#### Bean模板
+
+* 可以创建一个Bean的模板, 供其他继承
+* 模板不用指定`class`属性, 而要添加`abstract=true`的属性
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+   <bean id="beanTeamplate" abstract="true">
+      <property name="message1" value="Hello World!"/>
+      <property name="message2" value="Hello Second World!"/>
+      <property name="message3" value="Namaste India!"/>
+   </bean>
+
+   <bean id="helloIndia" class="com.tutorialspoint.HelloIndia" parent="beanTeamplate">
+      <property name="message1" value="Hello India!"/>
+      <property name="message3" value="Namaste India!"/>
+   </bean>
+
+</beans>
+```
+
 
 
 ## DI 依赖注入
