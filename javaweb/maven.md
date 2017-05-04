@@ -474,15 +474,20 @@ mvn clean
 * `archetype`插件是专门用来创建项目的脚手架
 * maven提供了多种现成的脚手架, 用于创建不同的项目; 我们也可以自定义脚手架来创建自定义的项目结构
     - 现成的脚手架:
-        - 普通Java项目: `org.apache.maven.archetypes:maven-archetype-quickstart`
+        - 普通Java项目(最终生成jar文件): `org.apache.maven.archetypes:maven-archetype-quickstart`
         - 网站项目: `org.apache.maven.archetypes:maven-archetype-site`
-        - Web应用项目: `org.apache.maven.archetypes:maven-archetype-webapp`
+        - Web应用项目(最终生成war文件): `org.apache.maven.archetypes:maven-archetype-webapp`
         - 使用现成的脚手架:
-            - 项目根目录执行`mvn archetype:generate`, maven会联网搜索远程的模板并列出, 输入模板编号
-            - maven会提示选择该模板的版本号, 输入版本号
-            - maven会提示输入项目的详细信息
-            - maven会让你确认项目信息
-            - maven执行创建
+            - 互动方式:
+                - 项目根目录执行`mvn archetype:generate`, maven会联网搜索远程的模板并列出, 输入模板编号
+                    - 由于模板列表较长, 从命令行中要找到需要的很困难, 你可以使用以下方式将列表重定向到文件中查看: `mvn archetype:generate > templates.txt`
+                - maven会提示选择该模板的版本号, 输入版本号
+                - maven会提示输入项目的详细信息
+                - maven会让你确认项目信息
+                - maven执行创建
+            - 非互动方式(如果已经知道要创建什么模板, 则可以通过参数直接指定)
+                - Web项目: `mvn archetype:generate -DgroupId={groupId} -DartifactId={projectName} -DarchetypeArtifactId=maven-archetype-webapp - DinteractiveMode=false`
+                - 普通Java项目: `mvn archetype:generate -DgroupId={groupId} -DartifactId={projectName} -DarchetypeArtifactId=maven-archetype-quickstart - DinteractiveMode=false`
     - 自定义脚手架
         - 创建自定义脚手架的方式有2种
             - 从现有项目结构导出
@@ -603,3 +608,35 @@ mvn clean
    </dependencies>
 </project>
 ```
+
+
+## Maven构建项目
+
+* 打包: 在`pom.xml`中的`<project></project>`标签内, 配置`<packaging></packaging>`标签, 值为`jar`则生成jar文件, 值为`war`则生成war文件
+
+```xml
+<!-- jar包 -->
+<project...>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.yiibai</groupId>
+    <artifactId>Maven Example</artifactId>
+    <packaging>jar</packaging>
+    ...
+</project>
+
+<!-- war包 -->
+<project...>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.yiibai</groupId>
+    <artifactId>Maven Example</artifactId>
+    <packaging>war</packaging>
+    ...
+</project>
+```
+
+
+## Maven清理项目
+
+* maven构建后会生成很多文件在`target`目录中, 如果执行新的构建, 则需要先清理该目录中的缓存文件.
+* 清理命令: `mvn clean`. 执行后`target`目录会被删除
+* 建议打包时使用: `mvn clean package`, 即先清理, 再打包, 保证数据都是最新的
