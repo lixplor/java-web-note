@@ -117,10 +117,14 @@ usi.saveUser();
     - `destroy-method`: 当bean从容器中删除的时候调用destroy-method属性指定的方法
 
 
-## IOC容器
+## IoC容器
 
-* IOC, Inverse of Control, 控制翻转. 将对象的创建权反转给框架, 实现解耦
-* 实现方式:
+* IoC, Inverse of Control, 控制翻转. 将对象的创建权反转给框架, 实现解耦
+    - IoC的实现方式有2种:
+        1. 依赖查找
+        2. 依赖注入(DI)
+* IoC和DI的关系: IoC是目的, DI是手段
+* Spring的IoC实现方式:
     - `业务代码`和`资源`通过中间的`工厂类`和`配置文件`控制, 实现解耦
 * Spring容器是Spring框架的核心. 容器会创建对象, 把他们链接在一起, 配置他们, 并管理他们的整个生命周期
 * Spring容器使用依赖注入(DI)来管理组成一个应用程序的组件, 这些对象被称为`Spring Beans`
@@ -572,7 +576,300 @@ public class MainApp {
 
 ## DI 依赖注入
 
-* DI, Dependency Injection, 依赖注入, 动态将依赖对象注入
+* DI, Dependency Injection, 依赖注入, 动态将依赖对象注入. 用于实现IoC
+* Spring提供了2种DI方式:
+    - 构造函数DI
+    - set方法DI
+
+### 基于构造函数的DI
+
+* 通过Bean的构造函数由容器来创建依赖
+    - 在xml中bean的定义中, 使用`<constructor-arg ref="{beanId}"/>`来声明一个依赖. 这种方式使用构造方法来创建对象
+    - 如果构造方法有多个参数, 则在定义其他bean时, 要将定义的顺序改为构造方法的参数顺序
+* 解释
+    - 在`TextEditor`类中有成员属性`SpellChecker`对象, 这是一种依赖, 要将其通过注入的方式解耦
+    - 在`TextEditor`类的构造方法中, 我们看到若要创建`TextEditor`需要传入一个`SpellChecker`对象
+    - 在xml中的`TextEditor`类的bean定义中, 使用`<constructor-arg ref="{beanId}"/>`为`TextEditor`类声明了一个依赖`SpellChecker`
+    - 在`MainApp.java`使用ApplicationContext生成了一个`TextEditor`类, 内部先创建了`SpellChecker`对象的依赖
+    - 在这里, 并不需要手动去new一个SpellChecker对象传入
+* 示例
+
+```xml
+Beans.xml
+---------
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+   <!-- Definition for textEditor bean -->
+   <bean id="textEditor" class="com.tutorialspoint.TextEditor">
+      <constructor-arg ref="spellChecker"/>
+   </bean>
+
+   <!-- Definition for spellChecker bean -->
+   <bean id="spellChecker" class="com.tutorialspoint.SpellChecker">
+   </bean>
+
+</beans>
+```
+
+```java
+TextEditor.java
+---------------
+package com.tutorialspoint;
+public class TextEditor {
+   private SpellChecker spellChecker;
+   public TextEditor(SpellChecker spellChecker) {
+      System.out.println("Inside TextEditor constructor." );
+      this.spellChecker = spellChecker;
+   }
+   public void spellCheck() {
+      spellChecker.checkSpelling();
+   }
+}
+```
+
+```java
+SpellChecker.java
+-----------------
+package com.tutorialspoint;
+public class SpellChecker {
+   public SpellChecker(){
+      System.out.println("Inside SpellChecker constructor." );
+   }
+   public void checkSpelling() {
+      System.out.println("Inside checkSpelling." );
+   }
+}
+```
+
+```java
+MainApp.java
+------------
+package com.tutorialspoint;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+public class MainApp {
+   public static void main(String[] args) {
+      ApplicationContext context =
+             new ClassPathXmlApplicationContext("Beans.xml");
+      TextEditor te = (TextEditor) context.getBean("textEditor");
+      te.spellCheck();
+   }
+}
+```
+
+```bash
+# 输出结果
+Inside SpellChecker constructor.  # 先创建了依赖对象
+Inside TextEditor constructor.
+Inside checkSpelling.
+```
+
+### 基于set方法的DI
+
+* 通过Bean的set方法来注入依赖对象
+    - 在xml中bean的定义中, 使用`<property name="{objectName} ref="{beanId}"/>`来声明一个依赖. 这种方式使用set方法来创建对象
+    - 如果构造方法有多个参数, 则在定义其他bean时, 要将定义的顺序改为构造方法的参数顺序
+* 解释
+    - 在`TextEditor`类中有成员属性`SpellChecker`对象, 这是一种依赖, 要将其通过注入的方式解耦
+    - 在`TextEditor`类中可以通过`setSpellChecker(SpellChecker spellChecker)`方法来注入一个`SpellChecker`对象
+    - 在xml中的`TextEditor`类的bean定义中, 使用`<property name="spellChecker" ref="spellChecker"/>`为`TextEditor`类声明了一个依赖`SpellChecker`
+    - 在`MainApp.java`使用ApplicationContext生成了一个`TextEditor`类, 内部先创建了`SpellChecker`对象的依赖
+    - 在这里, 并不需要手动去new一个SpellChecker对象传入
+* 示例
+
+```xml
+Beans.xml
+---------
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+   <!-- Definition for textEditor bean -->
+   <bean id="textEditor" class="com.tutorialspoint.TextEditor">
+      <property name="spellChecker" ref="spellChecker"/>
+   </bean>
+
+   <!-- Definition for spellChecker bean -->
+   <bean id="spellChecker" class="com.tutorialspoint.SpellChecker">
+   </bean>
+
+</beans>
+```
+
+```java
+TextEditor.java
+---------------
+package com.tutorialspoint;
+public class TextEditor {
+   private SpellChecker spellChecker;
+   // a setter method to inject the dependency.
+   public void setSpellChecker(SpellChecker spellChecker) {
+      System.out.println("Inside setSpellChecker." );
+      this.spellChecker = spellChecker;
+   }
+   // a getter method to return spellChecker
+   public SpellChecker getSpellChecker() {
+      return spellChecker;
+   }
+   public void spellCheck() {
+      spellChecker.checkSpelling();
+   }
+}
+```
+
+```java
+SpellChecker.java
+-----------------
+package com.tutorialspoint;
+public class SpellChecker {
+   public SpellChecker(){
+      System.out.println("Inside SpellChecker constructor." );
+   }
+   public void checkSpelling() {
+      System.out.println("Inside checkSpelling." );
+   }  
+}
+```
+
+```java
+MainApp.java
+------------
+package com.tutorialspoint;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+public class MainApp {
+   public static void main(String[] args) {
+      ApplicationContext context =
+             new ClassPathXmlApplicationContext("Beans.xml");
+      TextEditor te = (TextEditor) context.getBean("textEditor");
+      te.spellCheck();
+   }
+}
+```
+
+```bash
+# 运行结果
+Inside SpellChecker constructor. # 依赖被创建
+Inside setSpellChecker.
+Inside checkSpelling.
+```
+
+
+### 使用DI注入内部Bean
+
+* 有可能一个Bean中还有另一个Bean作为属性, 这称为`内部Bean`
+* 如果要注入的是这个内部Bean, 那么我们只需要在xml中的属性内部配置bean
+
+```xml
+Beans.xml
+---------
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+   <!-- Definition for textEditor bean using inner bean -->
+   <bean id="textEditor" class="com.tutorialspoint.TextEditor">
+      <property name="spellChecker">
+         <bean id="spellChecker" class="com.tutorialspoint.SpellChecker"/>
+       </property>
+   </bean>
+
+</beans>
+```
+
+### 使用DI注入集合
+
+* 当某个类的依赖不是某个对象, 而是一个集合(List, Set, Map, Properties), 我们把这种注入称为注入集合
+* 对应的注入标签:
+    - `List`: `<list></list>`
+    - `Set`: `<set></set>`
+    - `Map`: `<map></map>`
+    - `Properties`: `<props></props>`
+* 集合中的值:
+    - 当集合中的值是基本类型时, 使用`<value></value>`, `<entry key="" value=""/>`, `<prop></prop>`来设置值
+    - 当集合中的值是引用类型时, 我们可以使用`<ref bean=""/>`来设置值
+    - 如果值为null, 则使用`<null/>`作为值, 如`<property name="email"><null/></property>`
+
+```xml
+Beans.xml
+---------
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+   <!-- Definition for javaCollection -->
+   <bean id="javaCollection" class="com.tutorialspoint.JavaCollection">
+
+   <!-- Passing bean reference  for java.util.List -->
+         <property name="addressList">
+            <list>
+               <ref bean="address1"/>
+               <ref bean="address2"/>
+               <value>Pakistan</value>
+            </list>
+         </property>
+
+      <!-- results in a setAddressList(java.util.List) call -->
+      <property name="addressList">
+         <list>
+            <value>INDIA</value>
+            <value>Pakistan</value>
+            <value>USA</value>
+            <value>USA</value>
+         </list>
+      </property>
+
+      <!-- results in a setAddressSet(java.util.Set) call -->
+      <property name="addressSet">
+         <set>
+            <value>INDIA</value>
+            <value>Pakistan</value>
+            <value>USA</value>
+            <value>USA</value>
+        </set>
+      </property>
+
+      <!-- results in a setAddressMap(java.util.Map) call -->
+      <property name="addressMap">
+         <map>
+            <entry key="1" value="INDIA"/>
+            <entry key="2" value="Pakistan"/>
+            <entry key="3" value="USA"/>
+            <entry key="4" value="USA"/>
+         </map>
+      </property>
+
+      <!-- results in a setAddressProp(java.util.Properties) call -->
+      <property name="addressProp">
+         <props>
+            <prop key="one">INDIA</prop>
+            <prop key="two">Pakistan</prop>
+            <prop key="three">USA</prop>
+            <prop key="four">USA</prop>
+         </props>
+      </property>
+
+   </bean>
+
+</beans>
+```
+
+### 小结
+
 * 注入Bean
     - `<bean>`
         - 属性: `<property name="属性名" value="属性值"/>`
