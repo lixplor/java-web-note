@@ -38,14 +38,8 @@
 ## 环境配置
 
 * JDK
-* Spring框架[http://projects.spring.io/spring-framework/](http://projects.spring.io/spring-framework/)
+* Spring框架官网:  [http://projects.spring.io/spring-framework/](http://projects.spring.io/spring-framework/)
 
-
-## 配置log4j
-
-* log4j
-    - 配置: `src/log4j.properties`
-    - 使用: `Logger.getClass(Xxx.class).info("aaa");`
 
 ## 快速入门
 
@@ -231,7 +225,7 @@ public class MainApp {
     1. 创建一个名为 `SpringExample` 的工程, 在 `src` 下新建一个名为 `com.tutorialspoint` 的文件夹`src`
     2. 点击右键, 选择 `Add External JARs` 选项, 导入 Spring 的库文件
     3. 在 `com.tutorialspoint` 文件夹下创建 `HelloWorld.java` 和 `MainApp.java` 两个类文件
-    4. 文件夹下创建 Bean 的配置文件 `Beans.xml`
+    4. 文件夹下创建 Bean 的配置文件 `applicationContext.xml`
     5. 最后的步骤是编辑所有 JAVA 文件的内容和 Bean 的配置文件, 按照以前我们讲的那样去运行应用程序
 * 解释
     - 使用`FileSystemXmlApplicationContext`来加载xml配置
@@ -240,7 +234,7 @@ public class MainApp {
 * 示例
 
 ```xml
-Beans.xml
+applicationContext.xml
 ---------
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
@@ -279,7 +273,7 @@ import org.springframework.context.support.FileSystemXmlApplicationContext;
 public class MainApp {
    public static void main(String[] args) {
       ApplicationContext context = new FileSystemXmlApplicationContext
-            ("C:/Users/ZARA/workspace/HelloSpring/src/Beans.xml");
+            (".../HelloSpring/src/applicationContext.xml");
       HelloWorld obj = (HelloWorld) context.getBean("helloWorld");
       obj.getMessage();
    }
@@ -360,6 +354,8 @@ public class MainApp {
     - `default-destroy-method`: 默认的销毁回调
 
 ```xml
+applicationContext.xml
+----------------------
 <beans xmlns="http://www.springframework.org/schema/beans"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.springframework.org/schema/beans
@@ -384,7 +380,7 @@ public class MainApp {
 * 示例:
 
 ```xml
-Beans.xml
+applicationContext.xml
 ---------
 <?xml version="1.0" encoding="UTF-8"?>
 
@@ -433,7 +429,7 @@ import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 public class MainApp {
    public static void main(String[] args) {
-      AbstractApplicationContext context = new ClassPathXmlApplicationContext("Beans.xml");
+      AbstractApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
       HelloWorld obj = (HelloWorld) context.getBean("helloWorld");
       obj.getMessage();
       context.registerShutdownHook();
@@ -455,7 +451,7 @@ public class MainApp {
 * 示例
 
 ```xml
-Beans.xml
+applicationContext.xml
 ---------
 <?xml version="1.0" encoding="UTF-8"?>
 
@@ -521,7 +517,7 @@ import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 public class MainApp {
    public static void main(String[] args) {
-      AbstractApplicationContext context = new ClassPathXmlApplicationContext("Beans.xml");
+      AbstractApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
       HelloWorld obj = (HelloWorld) context.getBean("helloWorld");
       obj.getMessage();
       context.registerShutdownHook();
@@ -605,7 +601,7 @@ public class MainApp {
 * 示例
 
 ```xml
-Beans.xml
+applicationContext.xml
 ---------
 <?xml version="1.0" encoding="UTF-8"?>
 
@@ -665,7 +661,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 public class MainApp {
    public static void main(String[] args) {
       ApplicationContext context =
-             new ClassPathXmlApplicationContext("Beans.xml");
+             new ClassPathXmlApplicationContext("applicationContext.xml");
       TextEditor te = (TextEditor) context.getBean("textEditor");
       te.spellCheck();
    }
@@ -693,7 +689,7 @@ Inside checkSpelling.
 * 示例
 
 ```xml
-Beans.xml
+applicationContext.xml
 ---------
 <?xml version="1.0" encoding="UTF-8"?>
 
@@ -758,7 +754,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 public class MainApp {
    public static void main(String[] args) {
       ApplicationContext context =
-             new ClassPathXmlApplicationContext("Beans.xml");
+             new ClassPathXmlApplicationContext("applicationContext.xml");
       TextEditor te = (TextEditor) context.getBean("textEditor");
       te.spellCheck();
    }
@@ -779,7 +775,7 @@ Inside checkSpelling.
 * 如果要注入的是这个内部Bean, 那么我们只需要在xml中的属性内部配置bean
 
 ```xml
-Beans.xml
+applicationContext.xml
 ---------
 <?xml version="1.0" encoding="UTF-8"?>
 
@@ -812,7 +808,7 @@ Beans.xml
     - 如果值为null, 则使用`<null/>`作为值, 如`<property name="email"><null/></property>`
 
 ```xml
-Beans.xml
+applicationContext.xml
 ---------
 <?xml version="1.0" encoding="UTF-8"?>
 
@@ -958,7 +954,7 @@ public class User {
 * 示例
 
 ```xml
-Beans.xml
+applicationContext.xml
 ---------
 <?xml version="1.0" encoding="UTF-8"?>
 
@@ -1032,7 +1028,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 public class MainApp {
    public static void main(String[] args) {
-      ApplicationContext context = new ClassPathXmlApplicationContext("Beans.xml");
+      ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
       TextEditor te = (TextEditor) context.getBean("textEditor");
       te.spellCheck();
    }
@@ -1060,8 +1056,9 @@ Inside checkSpelling.
 * 示例
 
 ```xml
+applicationContext.xml
+----------------------
 <?xml version="1.0" encoding="UTF-8"?>
-
 <beans xmlns="http://www.springframework.org/schema/beans"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.springframework.org/schema/beans
@@ -1133,7 +1130,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 public class MainApp {
    public static void main(String[] args) {
       ApplicationContext context =
-             new ClassPathXmlApplicationContext("Beans.xml");
+             new ClassPathXmlApplicationContext("applicationContext.xml");
       TextEditor te = (TextEditor) context.getBean("textEditor");
       te.spellCheck();
    }
@@ -1160,7 +1157,7 @@ Inside checkSpelling.
 * 示例
 
 ```xml
-Beans.xml
+applicationContext.xml
 ---------
 <?xml version="1.0" encoding="UTF-8"?>
 
@@ -1235,7 +1232,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 public class MainApp {
    public static void main(String[] args) {
       ApplicationContext context =
-             new ClassPathXmlApplicationContext("Beans.xml");
+             new ClassPathXmlApplicationContext("applicationContext.xml");
       TextEditor te = (TextEditor) context.getBean("textEditor");
       te.spellCheck();
    }
@@ -1263,7 +1260,7 @@ Inside checkSpelling.
         - 同方式1, 但注册了更多的解析器, 可以看做包含方式1
 
 ```xml
-Beans.xml
+applicationContext.xml
 ---------
 <?xml version="1.0" encoding="UTF-8"?>
 
@@ -1308,7 +1305,7 @@ Beans.xml
 #### 示例
 
 ```xml
-Beans.xml
+applicationContext.xml
 ---------
 <?xml version="1.0" encoding="UTF-8"?>
 
@@ -1365,7 +1362,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 public class MainApp {
    public static void main(String[] args) {
-      ApplicationContext context = new ClassPathXmlApplicationContext("Beans.xml");
+      ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
       Student student = (Student) context.getBean("student");
       System.out.println("Name : " + student.getName() );
       System.out.println("Age : " + student.getAge() );
@@ -1531,7 +1528,7 @@ public class TextEditor {
     - 在`Profile`类中使用`@Qualifier("student1")`指定了使用xml中id为`student1`的bean作为初始化
 
 ```xml
-Beans.xml
+applicationContext.xml
 ---------
 <?xml version="1.0" encoding="UTF-8"?>
 
@@ -1616,7 +1613,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 public class MainApp {
    public static void main(String[] args) {
-      ApplicationContext context = new ClassPathXmlApplicationContext("Beans.xml");
+      ApplicationContext context = new ClassPathXmlApplicationContext("applicationContext.xml");
       Profile profile = (Profile) context.getBean("profile");
       profile.printAge();
       profile.printName();
@@ -1660,7 +1657,7 @@ public class HelloWorldConfig {
 * 等同于xml中的配置
 
 ```xml
-Beans.xml
+applicationContext.xml
 ---------
 <beans>
    <bean id="helloWorld" class="com.tutorialspoint.HelloWorld" />
@@ -1795,47 +1792,24 @@ public class CustomEventPublisher
 
 
 
-## Spring整合JUnit单元测试
 
-* 作用: 免去创建工厂, 加载配置文件, getBean()
-* 步骤
-    1. 引入`spring-test-xxx.jar`
-    2. 通过注解实现
-        - 类上
-            - 设置JUnit测试: `@RunWith(SpringJUnit4ClassRunner.class)`
-            - 设置配置文件: `@contextConfiguration("classpath:applicationContext")`
-        - 成员
-            - 引入依赖: `@Resource(name=userService)`
-        - 方法
-            - 执行测试: `@Test`
-
-```java
-@RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration("classpath:applicationContext.xml")
-public class Demo {
-    @Resource(name="userService")
-    private UserService userService;
-
-    @Test
-    public void testHello() {
-        // 不用再获取工厂加载配置文件getBean()了
-        userService.hello();
-    }
-}
-```
 
 
 ## AOP
 
 * AOP, Aspect oriented programming, 面向切面编程, 目的是实现模块化编程, 取代传统纵向继承的重复性代码. 是OOP的延续
-* 在不改变原代码的情况下, 增加功能
-* 通过预编译方式, 在运行期间动态代理实现程序功能
+* OOP的最小单元是类, AOP的最小单元是切面
+* 目的: 在不改变原代码的情况下, 增加功能
+* 原理: 通过预编译方式, 在运行期间动态代理实现程序功能
 
 ### AOP的实现原理: 动态代理
 
-* 使用JDK的`Proxy`类生成代理对象
+* 动态代理有2种实现方式:
+    1. 使用JDK的`Proxy`类生成代理对象
+    2. 使用cglib方式进行动态代理
 
 ```java
+// 使用JDK的`Proxy`类生成代理对象
 public static UserDao getProxy(final UserDao dao) {
     UserDao proxy = (UserDao) Proxy.newProxyInstance(dao.getClass().getClassLoader(), dao.getClass().getInterfaces(), new InvocationHandler() {
         public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -1850,82 +1824,37 @@ public static UserDao getProxy(final UserDao dao) {
 }
 ```
 
-* 使用cglib方式进行动态代理
-
 
 ### AOP术语
 
-* `Joinpoint`: 连接点. 指要被拦截到的点, 在spring中这些点指的是方法, 因为spring只支持方法类型的连接点
-* `Pointcut`: 切入点. 指我们要对那些Joinpoint进行拦截的定义
-* `Advice`: 通知/增强. 指拦截到Joinpoint之后所要做的事情就是通知.
-    - 前置通知
-    - 后置通知
-    - 异常通知
-    - 最终通知
-    - 环绕通知
+这些并不是Spring特有的术语, 而是AOP的相关概念
+
+* `Aspect`: 切面, 一个切面具有一组提供横切需求的API
+* `Join point`: 连接点. 指要被拦截到的点, 在spring中这些点指的是方法, 因为spring只支持方法类型的连接点
+* `Pointcut`: 切入点. 一组一个或多个连接点, 通知在这里执行. 指我们要对那些Join point进行拦截的定义
+* `Advice`: 通知. 指拦截到Join point之前或之后所要做的事情就是通知.
+    - Spring提供5种通知:
+        - `前置通知`: 在目标类的方法执行之前执行
+        - `后置通知`: 在目标类的方法执行之后执行
+        - `异常通知(抛出异常后通知)`: 在抛出异常后通知
+        - `最终通知(返回后通知)`: 在目标类的方法执行后执行, 即使之前出现了异常
+        - `环绕通知`: 方法执行的前, 后都执行
 * `Introduction`: 引介. 一种特殊的通知, 在不修改代码的前提下, Introduction可以在运行期为类动态地添加一些方法或属性
-* `Target`: 目标对象. 代理的目标对象
-* `Weaving`: 织入. 指把增强应用到目标对象来创建新的代理对象的过程
-* `Proxy`: 代理. 一个类被AOP织入增强后, 就产生一个结果代理类
+* `Target object`: 目标对象. 代理的目标对象
+* `Weaving`: 织入. 指把通知应用到目标对象来创建新的代理对象的过程
+* `Proxy`: 代理. 一个类被AOP织入通知后, 就产生一个结果代理类
 * `Aspect`: 切面. 切入点和通知的结合
 
 
-### xml配置方式
+### 自定义切面
 
-* 步骤
-    - 导入依赖包
-    - 创建业务类
-    - 创建切面类, 定义方法作为advice
-    - 创建`/src/applicationContext.xml`
-        - 引入`aop`schema
-        - 声明切面类和其他类的bean
-        - 配置aop
-            - `<aop:config></aop:config>`
-                - 配置切面类: `<aop:aspect ref="切面类id"></aop:aspect>`
-                    - 配置前置通知: `<aop:before method="方法名" pointcut="切入点表达式"/>`
+* 自定义切面有2种方式:
+    1. xml配置
+    2. `@AspectJ`注解
 
-```java
-业务类, 要被切入的类
----------------
-public class UserDao {
+### xml配置自定义切面
 
-    public User getUser() {
-
-    }
-}
-```
-
-```java
-切面类, 要切入的增强功能
---------------------
-public class LogAspect {
-    public void log() {
-        // ...
-    }
-}
-```
-
-```xml
-配置aop
-------
-<?xml version="1.0" encoding="UTF-8"?>
-<beans>
-    <!-- 配置业务类dao -->
-    <bean id="userDao" class="xxx.UserDao"/>
-
-    <!-- 配置切面类 -->
-    <bean id="logAspect" class="xxx.LogAspect"/>
-
-    <!-- 配置aop -->
-    <aop:config>
-        <!-- 配置切面类 -->
-        <aop:aspect ref="logAspect">
-            <!-- 配置前置通知, 即在方法最前执行 -->
-            <aop:before method="log" pointcut="execution(public User xxx.UserDao.getUser())"
-        </aop:aspect>
-    </aop:config>
-</beans>
-```
+可以在xml配置中配置AOP
 
 #### 切入点表达式
 
@@ -1941,40 +1870,152 @@ public class LogAspect {
 
 * 前置通知
     - 在目标类的方法执行之前执行
-    - 配置: `<aop:before method="方法名" pointcut-ref="切入点"/>`
+    - 配置: `<aop:before method="切面方法名" pointcut-ref="切入点id"/>`
     - 场景: 校验方法参数
 * 后置通知
     - 在目标类的方法执行之后执行
-    - 配置: `<aop:after-returning method="方法名" pointcut-ref="切入点"/>`
+    - 配置: `<aop:after-returning method="切面方法名" pointcut-ref="切入点id"/>`
     - 场景: 修改方法返回值
 * 异常通知
     - 在抛出异常后通知
-    - 配置: `<aop:after-throwing method="方法名" pointcut-ref="切入点"/>`
+    - 配置: `<aop:after-throwing method="切面方法名" pointcut-ref="切入点id"/>`
     - 场景: 封装异常信息
 * 最终通知
     - 在目标类的方法执行后执行, 即使之前出现了异常
-    - 配置: `<aop:after method="方法名" prointcut-ref="切入点"/>`
+    - 配置: `<aop:after method="切面方法名" prointcut-ref="切入点id"/>`
     - 场景: 释放资源
 * 环绕通知
     - 方法执行的前, 后都执行
-    - 配置: `<aop:around method="方法名" pointcut-ref="切入点"/>`
+    - 配置: `<aop:around method="切面方法名" pointcut-ref="切入点id"/>`
     - 注意: 目标的方法默认不执行, 需要使用`ProceedingJoinPoint point`参数来让目标对象的方法执行
 
-
-### 注解配置方式
+#### 使用步骤
 
 * 步骤
-    - 引入必要包
-    - 创建`src/applicationContext.xml`
-        - 开启注解自动代理
-        - 声明bean
-    - 创建实现类
-    - 创建切面类, 使用注解
+    - 导入依赖包: spring-aop
+    - 创建要被切入的类
+    - 创建切面类, 定义方法作为advice
+    - 创建`/src/applicationContext.xml`
+        - 引入`aop`schema
+            - `xmlns:aop="http://www.springframework.org/schema/aop"`
+            - `http://www.springframework.org/schema/aop`
+            - `http://www.springframework.org/schema/aop/spring-aop-3.0.xsd`
+        - 声明`切面类`和`要被切入类`的bean
+        - 配置aop
+            - `<aop:config></aop:config>`
+                - 配置切面类: `<aop:aspect ref="{切面类id}"></aop:aspect>`
+                - 配置切入和通知的2种方式:
+                    - 方式1, 分别配置切入点和通知:
+                        - 配置切入点: `<aop:pointcut id="userDao" expression="execution(public User xxx.yyy.zzz())"/>`
+                        - 配置前置通知: `<aop:before method="{切面方法名}" pointcut-ref="userDao"/>`
+                    - 方式2, 在通知中配置切入点:
+                        - 配置前置通知: `<aop:before method="{切面方法名}" pointcut="execution(public User xxx.yyy.zzz())"/>`
 
+#### 示例
+
+* 业务类, 要被切入的类
+
+```java
+UserDao.java
+---------------
+public class UserDao {
+
+    public User getUser() {
+        // 将该方法作为切入点
+    }
+}
+```
+
+* 切面类, 要切入的增强功能
+
+```java
+LogAspect.java
+--------------------
+public class LogAspect {
+    public void log() {
+        // 通知方法
+    }
+}
+```
+
+* 配置aop
+
+```xml
+applicationContext.xml
+----------------------
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:aop="http://www.springframework.org/schema/aop"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+    http://www.springframework.org/schema/aop
+    http://www.springframework.org/schema/aop/spring-aop-3.0.xsd ">
+
+    <!-- 配置要被切入的类 -->
+    <bean id="userDao" class="xxx.UserDao"/>
+
+    <!-- 配置切面类 -->
+    <bean id="logAspect" class="xxx.LogAspect"/>
+
+    <!-- 配置aop -->
+    <aop:config>
+        <!-- 配置切面类 -->
+        <aop:aspect id="myAspect" ref="logAspect">
+            <!-- 配置切入点, 即要执行通知的位置. 这里将UserDao的getUser()方法作为切入点 -->
+            <aop:pointcut id="userDao" expression="execution(public User xxx.UserDao.getUser())"/>
+            <!-- 配置前置通知, 即在getUser方法的最前执行切面的log方法 -->
+            <aop:before method="log" pointcut-ref="userDao"/>
+        </aop:aspect>
+    </aop:config>
+</beans>
+```
+
+
+### @AspectJ 注解配置方式
+
+也可以通过注解的方式配置AOP
+
+#### 开启aop注解功能
+
+* 在xml中添加配置: `<aop:aspectj-autoproxy/>`
+
+#### 相关注解
+
+* 配置切面
+    - `@Aspect`: 定义类为切面类
+* 配置切面
+    - `@Pointcut(value="切入表达式")`: 定义方法作为切入点方法
+    - `@Before("切入点方法名")`: 前置通知
+    - `@After("切入点方法名")`: 后置通知
+    - `@AfterRunning("切入点方法名")`: 返回后通知
+    - `@AfterThrowing("切入点方法名")`: 抛出异常后通知
+    - `@Around("切入点方法名")`: 环绕通知
+
+#### 使用步骤
+
+* 步骤
+    - 引入必要包: aspectjxxx
+    - 创建`src/applicationContext.xml`
+        - 开启注解自动代理: `<aop:aspectj-autoproxy/>`
+        - 声明bean
+    - 创建切面类
+        - 使用`@Aspect`注解标记类作为切面类
+        - 使用`@Pointcut("切入点表达式")`注解切入点方法, 本方法为空实现, 表达式指向要切入的实际方法
+        - 使用`@Before("切入点方法名")`注解标记方法, 作为前置通知
+        - 使用`@After("切入点方法名")`注解标记方法, 作为后置通知
+        - 使用`@AfterReturning("切入点方法名")`注解标记方法, 作为返回后通知
+        - 使用`@AfterThrowing("切入点方法名")`注解标记方法, 作为抛出异常后通知
+    - 创建被切入的类
+
+#### 示例
 
 ```java
 public class UserDaoImpl implements UserDao {
 
+    public void save() {
+        // 要被切入的方法
+    }
 }
 ```
 
@@ -1983,16 +2024,21 @@ public class UserDaoImpl implements UserDao {
 -----
 @Aspect
 public class LogAspect {
-    @Before(value="execution(public * *..*.UserDaoImpl.save())")
+
+    //定义一个切入点方法, 该方法指示要切入UserDaoImpl的save()方法
+    @Pointcut(value="execution(public * *.UserDaoImpl.save())")
+    public void commonPointcut(){}
+
+    @Before(value="commonPointcut()") // 指向切入点方法
     public void log() {
-        // ...
+        // 前置通知方法
     }
 }
 ```
 
 ```xml
 <beans>
-    <!-- 开启自动注解 -->
+    <!-- 开启使用注解进行aop -->
     <aop:aspectj-autoproxy/>
 
     <!-- 配置目标对象 -->
@@ -2004,34 +2050,10 @@ public class LogAspect {
 </beans>
 ```
 
-通知注解类型:
-* `@Before`
-* `@After`
-* `@AfterRunning`
-* `@AfterThrowing`
-* `@Around`
-
-配置通用切入点
-* `@Pointcut(value="切入表达式")`定义切入点方法, 方法为空实现
-* 在其他切入点表达式引入
-
-```java
-public class MyAspect {
-    //定义一个切入点
-    @Pointcut(value="execution(public * xxx.save())")
-    public void commonPointcut(){}
-
-    @Before(value="MyAspect.commonPointcut()")    
-    public void run() {
-        // ...
-    }
-}
-```
-
 
 ## JDBC模板
 
-### 模板类
+### JdbcTemplate类
 
 * Spring提供了内置的连接池, 也可以整合其他连接池
 
@@ -2195,6 +2217,42 @@ public class UserServiceImpl implements UserService {
 }
 ```
 
+
+## 配置log4j
+
+* log4j
+    - 配置: `src/log4j.properties`
+    - 使用: `Logger.getClass(Xxx.class).info("aaa");`
+
+
+## 配置JUnit单元测试
+
+* 作用: 免去创建工厂, 加载配置文件, getBean()
+* 步骤
+    1. 引入`spring-test-xxx.jar`
+    2. 通过注解实现
+        - 类上
+            - 设置JUnit测试: `@RunWith(SpringJUnit4ClassRunner.class)`
+            - 设置配置文件: `@contextConfiguration("classpath:applicationContext")`
+        - 成员
+            - 引入依赖: `@Resource(name=userService)`
+        - 方法
+            - 执行测试: `@Test`
+
+```java
+@RunWith(SpringJUnit4ClassRunner.class)
+@ContextConfiguration("classpath:applicationContext.xml")
+public class Demo {
+    @Resource(name="userService")
+    private UserService userService;
+
+    @Test
+    public void testHello() {
+        // 不用再获取工厂加载配置文件getBean()了
+        userService.hello();
+    }
+}
+```
 
 
 ## Spring Struts整合
