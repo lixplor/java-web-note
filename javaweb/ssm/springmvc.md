@@ -1,7 +1,7 @@
 # SpringMVC
 
-* 负责Web层, 替代Struts2. 处理请求返回响应, 作为MVC中的`前端控制器`
-* 是Spring框架的一个组件, 集成Spring即可使用SpirngMVC
+* 负责Web层, 替代Struts2. 是Spring框架中的一个组件
+* 处理请求返回响应
 * 基于MVC的设计思想
 
 与struts2的区别:
@@ -12,7 +12,7 @@
 
 ## 安装配置
 
-* 官网[http://projects.spring.io/spring-framework/](http://projects.spring.io/spring-framework/)
+* 官网: [http://projects.spring.io/spring-framework/](http://projects.spring.io/spring-framework/)
 * maven
 
 ```xml
@@ -24,7 +24,11 @@
         <version>4.3.7.RELEASE</version>
     </dependency>
     <!-- spring web mvc 依赖 -->
-
+    <dependency>  
+        <groupId>org.springframework</groupId>  
+        <artifactId>spring-webmvc</artifactId>  
+        <version>4.3.7.RELEASE</version>  
+    </dependency>
 </dependencies>
 ```
 
@@ -74,19 +78,20 @@
 以上组件中, `HandlerMapping`, `Controller`, `ViewResolver`是`WebApplicationContext`的一部分
 
 
-## 配置
+## 配置文件
 
-* `WebContent/WEB-INF/web.xml`, 该配置文件可以:
-    - 配置由Spring默认的`DispatcherServlet`来拦截请求
-    - 配置自定义的spring mvc配置文件路径
-* `Xxx-servlet.xml`:
-    - `DispatcherServlet`的配置文件, 用于创建定义的bean
-    - 路径默认在`WebContent/WEB-INF/`下, 但可以通过`web.xml`自定义
-    - 该文件可以:
-        - 启用注解扫描
-        - 设置搜索`@Controller`注解
-        - 启用注解驱动
-        - 配置InternalResourceViewResolver来定义解析视图名称的规则
+* SpringMVC涉及2个配置文件:
+    - `WebContent/WEB-INF/web.xml`, 该配置文件可以:
+        - 配置由Spring默认的`DispatcherServlet`来拦截请求
+        - 配置自定义的spring mvc配置文件路径
+    - `{ProjectName}-servlet.xml`:
+        - `DispatcherServlet`的配置文件, 用于创建定义的bean
+        - 路径默认在`WebContent/WEB-INF/`下, 但可以通过`web.xml`自定义
+        - 该文件可以:
+            - 启用注解扫描
+            - 设置搜索`@Controller`注解
+            - 启用注解驱动
+            - 配置InternalResourceViewResolver来定义解析视图名称的规则
 
 ```xml
 WebContent/WEB-INF/web.xml
@@ -168,15 +173,50 @@ dispatcher-servlet.xml
 
 ## 定义控制器Controller
 
-* 注解
-    - 被注解的方法都叫做`服务方法`, 用于处理特定请求
-    - `@Controller`: 指定该类作为控制器
-    - `@RequestMapping(String url)`: 用于类. 映射URL到类
-    - `@RequestMapping(value = String url, method = RequestMethod method)`: 用于方法. 指定特定url的特定HTTP方法对应的处理方法. value指示处理程序方法映射的url, method定义处理HTTP method请求的服务方法
+* 注解: 被注解的方法都叫做`服务方法`, 用于处理特定请求
+    - 处理请求的注解
+        - `@Controller`: 指定该类作为控制器
+        - `@RequestMapping(String url)`: 用于类. 将整个类映射到URL, 当该类所有方法都是处理这个url时可以这样配置, 这样只需要在方法上配置其他属性即可, 如method等
+        - `@RequestMapping(value = String url, method = RequestMethod method)`: 用于方法. 指定该方法是处理指定url的指定HTTP方法的. 如果类没有配置url, 则请求以`方法url`为准; 如果类也配置了url, 则请求为`类url/方法url`
+            - `value`: 指示处理程序方法映射的url
+            - `method`: 定义处理HTTP method请求的服务方法
+    - 处理视图属性的注解
+        - `@ModelAttribute("HelloWeb")`
+    - 处理局部异常的注解
+        - `@ExceptionHandler({ExceptionClass1, ExceptionClass2, ...})`: 指定该服务方法需要处理的异常
+* 返回值
+    - 返回字符串, 作为视图:
+        - 返回一个String字符串, 它是渲染视图的名称
+        - 如: `return "hello";`
+    - 返回ModelAndView:
+        - 通过构造一个ModelAndView对象来保存视图和数据并将其返回
+        - 如: `return new ModelAndView("success", student);`
+    - 返回Model:
+        - 即返回一个对象
+    - 返回ModelMap:
+        - 将模型数据返回页面, 页面url不变. ModelMap以键值对方式存储多个数据
+    - 返回Map:
+        - 和ModelMap一样
+    - 返回List:
+        - 将模型数据返回页面, 页面url不变. 数据放在List中
+    - 返回Set:
+        - 将模型数据返回页面, 页面url不变. 数据放在Set中
+    - 重定向请求:
+        - 返回一个特殊的字符串`redirect:服务方法名`, 跳转到该方法处理
+        - 如: `login()`方法中登录成功, 则重定向到成功页面, `login()`先`return "redirect:success";`, 然后`success()`方法中`return "loginSuccess";`, 跳转到`loginSuccess.jsp`页面
+    - 重定向到静态资源:
+        - 返回一个特殊的字符串`redirect:/静态资源目录/静态资源文件名.后缀`
+        - 需要在`web.xml`中配置`<mvc:resources>`指定静态资源目录
+        - 如: `return "redirect:/pages/final.htm";`
+    - 转发:
+        - 返回一个特殊的字符串`forward:{url}`, 将请求转发给指定url
+    - Void:
+        - 即没有返回值, 不写`return`. 此时页面还是请求路径的页面
 * 注意
-    - 在每个服务方法中, 会创建一个模型. 可以设置不同的模型属性, 这些属性奖杯视图访问来显示视图.
+    - 在每个服务方法中, 会创建一个模型. 可以设置不同的模型属性, 这些属性将被视图访问来显示视图.
     - 定义的服务方法可以返回一个`String`, 作为渲染视图的名称
 
+### 示例
 
 ```java
 访问localhost:${port}/hello/mvc所进行的请求处理
@@ -187,7 +227,7 @@ public class HelloController {
     public String printHello(ModelMap model) {
         // 向模型中添加属性, 可在视图中获取进行显示
         model.addAttribute("message", "Hello Spring MVC Framework!");
-        // 设置视图的名称
+        // 设置视图的名称, 会显示hello.jsp
         return "hello";
    }
 }
@@ -222,4 +262,65 @@ public class HelloController {
         <h2>${message}</h2>
     </body>
 </html>
+```
+
+
+## ModelAndView
+
+* 代表了渲染视图所使用的Model和View, 通过ModelAndView对象来封装数据
+* 构造方法:
+    - `ModelAndView(String viewName)`: 返回视图名称
+    - `ModelAndView(String viewName, Map model)`: 返回视图名称, 并使用Map携带Model数据
+    - `ModelAndView(String viewName, String modelName, Object modelObject)`: 返回单个model时使用, 例如API, 并不需要返回视图
+
+
+## 异常处理
+
+* 处理局部异常
+    - `@ExceptionHandler`注解
+* 处理全局异常
+    - 使用现有异常处理器: `SimpleMappingExceptionResolver`
+    - 使用自定义全局异常处理器: 定义类实现`HandlerExceptionResolver`接口, 重写`public ModelAndView resolveException(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex)`方法
+* 异常处理方式: dao, service, controller的所有异常都往上抛, 最终由全局异常处理器处理
+
+```java
+// 自定义异常
+public class CustomException extends Exception {
+
+    //异常信息
+    public String message;
+
+    public CustomException(String message) {
+        super(message);
+        this.message = message;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+}
+```
+
+```xml
+xxx-servlet.xml
+---------------
+<!-- springmvc提供的简单异常处理器 -->
+<bean class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+     <!-- 定义默认的异常处理页面 -->
+    <property name="defaultErrorView" value="/WEB-INF/jsp/error.jsp"/>
+    <!-- 定义异常处理页面用来获取异常信息的变量名，也可不定义，默认名为exception -->
+    <property name="exceptionAttribute" value="ex"/>
+    <!-- 定义需要特殊处理的异常，这是重要点 -->
+    <property name="exceptionMappings">
+        <props>
+            <prop key="ssm.exception.CustomException">/WEB-INF/jsp/custom_error.jsp</prop>
+        </props>
+        <!-- 还可以定义其他的自定义异常 -->
+    </property>
+</bean>
 ```
