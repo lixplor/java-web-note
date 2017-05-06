@@ -117,6 +117,16 @@ usi.saveUser();
     - `destroy-method`: 当bean从容器中删除的时候调用destroy-method属性指定的方法
 
 
+## 配置文件管理
+
+* 可以使用多个配置文件
+* 2种方式
+    1. xml方式, 在主配置文件中引入其他配置文件
+        - `<import resource="com/xxx/xxx.xml"/>`
+    2. 代码方式
+        - `new ClassPathXmlApplicationContext(String...)`
+
+
 ## IoC容器
 
 * IoC, Inverse of Control, 控制翻转. 将对象的创建权反转给框架, 实现解耦
@@ -918,17 +928,769 @@ public class User {
 ```
 
 
-## 配置文件管理
+## Bean的自动装配(自动连接, autowire)
 
-* 可以使用多个配置文件
-* 2种方式
-    1. xml方式, 在主配置文件中引入其他配置文件
-        - `<import resource="com/xxx/xxx.xml"/>`
-    2. 代码方式
-        - `new ClassPathXmlApplicationContext(String...)`
+* Spring可以对Bean进行自动装配. 主要是减少xml配置中的bean中ref属性的编写
+* 自动装配的模式:
+    - 无模式: 默认, 表示没有自动装配
+    - `byName`: 按照属性的名称自动装配. 用于set方法DI
+    - `byType`: 按照属性的类型自动装配. 用于set方法DI
+    - `constructor`: 类似于byType, 但适用于构造函数DI
+    - `autodetect`: 自动检测, 首先尝试通过构造函数来装配, 如果不行则尝试byType
+* 自动装配的局限性:
+    - 如果仍然存在显式的声明, 则依然会被覆盖
+    - 不能自动装配基本类型, `String`和`Class`
+    - 不如显式装配精确
+
+### byName自动装配
+
+* 由`属性的名称`指定自动装配, 即通过类中依赖的变量名称与xml中bean的`id`或`name`来匹配
+* 用于set方法DI
+* 在xml配置中的beans中将`auto-wire`属性设置为`byName`, 会将属性与配置文件中定义相同名称(`id`或`name`)的beans进行匹配和连接, 如果找到匹配项则注入bean, 否则会抛出异常
 
 
-## 注解方式
+#### 示例
+
+* 解释
+    - `TextEditor`内部依赖`SpellChecker`, 且该依赖通过set方法传入
+    - 普通方式下, xml配置文件中, 在声明`TextEditor`时内部需要声明`SpellChecker`属性, 并使用`ref`属性引用依赖的bean
+    - 使用自动装配的`byName`方式后, 在声明`TextEditor`时只需要加入`autowire=byName`属性, 即可省略`spellChecker`属性的声明, Spring自动根据`TextEditor`类中的成员属性`spellChecker`在xml中寻找bean中`id`为`spellChecker`的这个bean来注入
+* 示例
+
+```xml
+Beans.xml
+---------
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <!-- 正常定义TextEditor方式, 内部有SpellChecker依赖, 要使用属性声明
+   <bean id="textEditor" class="com.tutorialspoint.TextEditor">
+       <property name="spellChecker" ref="spellChecker" />
+       <property name="name" value="Generic Text Editor" />
+   </bean>
+    -->
+
+   <!-- 使用autowire=byName进行属性自动装配, 免去声明依赖的属性 -->
+   <bean id="textEditor" class="com.tutorialspoint.TextEditor" autowire="byName">
+      <property name="name" value="Generic Text Editor" />
+   </bean>
+
+   <!-- 因为这个bean的id为spellChecker与TextEditor类中的依赖成员属性的名称相同, 所以注入这个bean -->
+   <bean id="spellChecker" class="com.tutorialspoint.SpellChecker"></bean>
+
+</beans>
+```
+
+```java
+TextEditor.java
+---------------
+package com.tutorialspoint;
+public class TextEditor {
+   private SpellChecker spellChecker;
+   private String name;
+   public void setSpellChecker( SpellChecker spellChecker ){
+      this.spellChecker = spellChecker;
+   }
+   public SpellChecker getSpellChecker() {
+      return spellChecker;
+   }
+   public void setName(String name) {
+      this.name = name;
+   }
+   public String getName() {
+      return name;
+   }
+   public void spellCheck() {
+      spellChecker.checkSpelling();
+   }
+}
+```
+
+```java
+SpellChecker.java
+-----------------
+package com.tutorialspoint;
+public class SpellChecker {
+   public SpellChecker() {
+      System.out.println("Inside SpellChecker constructor." );
+   }
+   public void checkSpelling() {
+      System.out.println("Inside checkSpelling." );
+   }   
+}
+```
+
+```java
+MainApp.java
+------------
+package com.tutorialspoint;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+public class MainApp {
+   public static void main(String[] args) {
+      ApplicationContext context = new ClassPathXmlApplicationContext("Beans.xml");
+      TextEditor te = (TextEditor) context.getBean("textEditor");
+      te.spellCheck();
+   }
+}
+```
+
+```bash
+# 输出结果
+Inside SpellChecker constructor.
+Inside checkSpelling.
+```
+
+### byType自动装配
+
+* 由`属性的类型`指定自动装配, 即使用类中依赖的类名与xml中bean的`class`匹配
+* 用于set方法DI
+* 在xml配置中将`autowire`属性设置为`byType`.
+
+#### 示例
+
+* 解释
+    - `TextEditor`内部依赖`SpellChecker`, 且该依赖通过set方法传入
+    - 普通方式下, xml配置文件中, 在声明`TextEditor`时内部需要声明`SpellChecker`属性, 并使用`ref`属性引用依赖的bean
+    - 使用自动装配的`byType`方式后, 在声明`TextEditor`时只需要加入`autowire=byType`属性, 即可省略`spellChecker`属性的声明, Spring自动根据`TextEditor`类中的成员属性`spellChecker`的类`com.tutorialspoint.SpellChecker`, 在xml中寻找bean中`class`为`com.tutorialspoint.SpellChecker`的这个bean来注入
+* 示例
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <!-- 正常定义TextEditor方式, 内部有SpellChecker依赖, 要使用属性声明
+    <bean id="textEditor" class="com.tutorialspoint.TextEditor">
+      <property name="spellChecker" ref="spellChecker" />
+      <property name="name" value="Generic Text Editor" />
+    </bean>
+    -->
+
+    <!-- 使用autowire=byType进行属性自动装配, 免去声明依赖的属性 -->
+    <bean id="textEditor" class="com.tutorialspoint.TextEditor" autowire="byType">
+        <property name="name" value="Generic Text Editor" />
+    </bean>
+
+    <!-- 因为这个bean的class为SpellChecker与TextEditor类中的依赖成员属性的类相同, 所以注入这个bean -->
+    <bean id="SpellChecker" class="com.tutorialspoint.SpellChecker"></bean>
+
+</beans>
+```
+
+```java
+TextEditor.java
+---------------
+package com.tutorialspoint;
+public class TextEditor {
+   private SpellChecker spellChecker;
+   private String name;
+   public void setSpellChecker( SpellChecker spellChecker ) {
+      this.spellChecker = spellChecker;
+   }
+   public SpellChecker getSpellChecker() {
+      return spellChecker;
+   }
+   public void setName(String name) {
+      this.name = name;
+   }
+   public String getName() {
+      return name;
+   }
+   public void spellCheck() {
+      spellChecker.checkSpelling();
+   }
+}
+```
+
+```java
+SpellChecker.java
+-----------------
+package com.tutorialspoint;
+public class SpellChecker {
+   public SpellChecker(){
+      System.out.println("Inside SpellChecker constructor." );
+   }
+   public void checkSpelling() {
+      System.out.println("Inside checkSpelling." );
+   }   
+}
+```
+
+```java
+MainApp.java
+------------
+package com.tutorialspoint;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+public class MainApp {
+   public static void main(String[] args) {
+      ApplicationContext context =
+             new ClassPathXmlApplicationContext("Beans.xml");
+      TextEditor te = (TextEditor) context.getBean("textEditor");
+      te.spellCheck();
+   }
+}
+```
+
+```bash
+# 输出结果
+Inside SpellChecker constructor.
+Inside checkSpelling.
+```
+
+### constructor自动装配
+
+* 与byType类型类似
+* 用于构造函数DI
+
+#### 示例
+
+* 解释
+    - `TextEditor`内部依赖`SpellChecker`, 且该依赖通过构造方法传入
+    - 普通方式下, xml配置文件中, 在声明`TextEditor`时内部需要声明`SpellChecker`属性, 并使用`ref`属性引用依赖的bean
+    - 使用自动装配的`constructor`方式后, 在声明`TextEditor`时只需要加入`autowire=constructor`属性, 即可省略`spellChecker`属性的声明, Spring自动根据`TextEditor`类中的成员属性`spellChecker`的构造方法, 寻找对应的bean来注入
+* 示例
+
+```xml
+Beans.xml
+---------
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+   <!-- 普通定义方式, 需要声明依赖spellChecker的构造函数
+   <bean id="textEditor" class="com.tutorialspoint.TextEditor">
+      <constructor-arg  ref="spellChecker" />
+      <constructor-arg  value="Generic Text Editor"/>
+   </bean>
+   -->
+
+   <!-- 由于使用autowire=constructor自动装配, 免去声明spellChecker构造函数, 会自动寻找对应的构造函数来注入 -->
+   <bean id="textEditor" class="com.tutorialspoint.TextEditor" autowire="constructor">
+      <constructor-arg value="Generic Text Editor"/>
+   </bean>
+
+   <!-- Definition for spellChecker bean -->
+   <bean id="spellChecker" class="com.tutorialspoint.SpellChecker">
+   </bean>
+
+</beans>
+```
+
+```java
+TextEditor.java
+---------------
+package com.tutorialspoint;
+public class TextEditor {
+   private SpellChecker spellChecker;
+   private String name;
+   public TextEditor( SpellChecker spellChecker, String name ) {
+      this.spellChecker = spellChecker;
+      this.name = name;
+   }
+   public SpellChecker getSpellChecker() {
+      return spellChecker;
+   }
+   public String getName() {
+      return name;
+   }
+   public void spellCheck() {
+      spellChecker.checkSpelling();
+   }
+}
+```
+
+```java
+SpellChecker.java
+-----------------
+package com.tutorialspoint;
+public class SpellChecker {
+   public SpellChecker(){
+      System.out.println("Inside SpellChecker constructor." );
+   }
+   public void checkSpelling()
+   {
+      System.out.println("Inside checkSpelling." );
+   }  
+}
+```
+
+```java
+MainApp.java
+------------
+package com.tutorialspoint;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+public class MainApp {
+   public static void main(String[] args) {
+      ApplicationContext context =
+             new ClassPathXmlApplicationContext("Beans.xml");
+      TextEditor te = (TextEditor) context.getBean("textEditor");
+      te.spellCheck();
+   }
+}
+```
+
+```bash
+# 输出结果
+Inside SpellChecker constructor.
+Inside checkSpelling.
+```
+
+
+## 基于注解的配置方式
+
+* 注解方式更简单, 用于取代xml配置
+
+### 开启注解方式
+
+* 默认注解方式是关闭的, 需要在配置中开启
+* 开启方式: (两者选一即可)
+    - 方式1: `<context:annotation-config/>`
+        - 开启注解配置功能, 同时注册了多个用于解析注解的解析器
+    - 方式2: `<context:component-scan base-package="要扫描的包"/>`
+        - 同方式1, 但注册了更多的解析器, 可以看做包含方式1
+
+```xml
+Beans.xml
+---------
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+    <!-- 开启注解方式1 -->
+    <context:annotation-config/>
+
+    <!-- 开启注解方式2 -->
+    <context:component-scan base-package="要扫描的包"/>
+
+    <!-- 在开启注解的声明下方, 再定义bean -->
+
+</beans>
+```
+
+### 使用注解
+
+* 注解分类
+    - 依赖注入注解:
+        - `@Required`: 可用于bean依赖属性的set方法
+        - `@Autowired`: 可用于bean依赖属性的set方法, 非set方法, 构造方法和属性
+        - `@Qualifier`: 指定具体的bean
+        - JSR-250 Annotations: Spring支持Java原生的注解
+            - `@Resource`: 相当于`@Autowired`和`@Qualifier`一起使用
+            - `@PostConstruct`: 相当于`init-method`
+            - `@PreDestroy`: 相当于`destroy-method`
+    - 配置注解:
+        - `@Configuration`: 用在类上, 定义一个bean, 代替一个`<beans></beans>`
+        - `@Bean`: 用在返回bean对象的方法上, 代替一个`<bean></bean>`
+
+### @Required注解的使用方式
+
+* `@Required`用在bean依赖的set方法上, 该依赖bean必须在xml中声明, 否则会抛出`BeanInitializationException`
+
+#### 示例
+
+```xml
+Beans.xml
+---------
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+   <context:annotation-config/>
+
+   <!-- Definition for student bean -->
+   <bean id="student" class="com.tutorialspoint.Student">
+      <property name="name"  value="Zara" />
+      <!-- age属性使用了@Required注解, 必须声明 -->
+      <property name="age"  value="11" />
+   </bean>
+
+</beans>
+```
+
+```java
+Student.java
+------------
+package com.tutorialspoint;
+import org.springframework.beans.factory.annotation.Required;
+public class Student {
+   private Integer age;
+   private String name;
+   @Required
+   public void setAge(Integer age) {
+      this.age = age;
+   }
+   public Integer getAge() {
+      return age;
+   }
+   @Required
+   public void setName(String name) {
+      this.name = name;
+   }
+   public String getName() {
+      return name;
+   }
+}
+```
+
+```java
+MainApp.java
+------------
+package com.tutorialspoint;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+public class MainApp {
+   public static void main(String[] args) {
+      ApplicationContext context = new ClassPathXmlApplicationContext("Beans.xml");
+      Student student = (Student) context.getBean("student");
+      System.out.println("Name : " + student.getName() );
+      System.out.println("Age : " + student.getAge() );
+   }
+}
+```
+
+```bash
+# 输出结果
+Name : Zara
+Age : 11
+```
+
+### @Autowired注解的使用
+
+* `@Autowired`提供更多自动装配的设置
+* `@Autowired`可用于多个地方:
+    - 在set方法上使用: 免去在xml声明`<property>`元素, 会执行`byType`自动装配
+    - 在构造方法上使用: 免去在xml中声明`<constructor-arg/>`, 也能通过构造方法自动装配
+    - 在属性上使用: 可以免去编写依赖的set方法和构造方法, 并且不用在xml中声明依赖的属性
+* `@Autowired(required=false)`: 相当于同时使用`@Autowired`和`@Required`, 表示仍然需要在xml中声明依赖的bean
+
+#### 示例
+
+* 用在set方法上
+
+```java
+package com.tutorialspoint;
+import org.springframework.beans.factory.annotation.Autowired;
+public class TextEditor {
+   private SpellChecker spellChecker;
+   @Autowired
+   public void setSpellChecker( SpellChecker spellChecker ){
+      this.spellChecker = spellChecker;
+   }
+   public SpellChecker getSpellChecker( ) {
+      return spellChecker;
+   }
+   public void spellCheck() {
+      spellChecker.checkSpelling();
+   }
+}
+```
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+   <context:annotation-config/>
+
+   <!-- 不再需要property的set方法  -->
+   <bean id="textEditor" class="com.tutorialspoint.TextEditor">
+   </bean>
+
+   <!-- Definition for spellChecker bean -->
+   <bean id="spellChecker" class="com.tutorialspoint.SpellChecker"></bean>
+
+</beans>
+```
+
+* 用在构造方法上
+
+```java
+package com.tutorialspoint;
+import org.springframework.beans.factory.annotation.Autowired;
+public class TextEditor {
+   private SpellChecker spellChecker;
+   @Autowired
+   public TextEditor(SpellChecker spellChecker){
+      System.out.println("Inside TextEditor constructor." );
+      this.spellChecker = spellChecker;
+   }
+   public void spellCheck(){
+      spellChecker.checkSpelling();
+   }
+}
+```
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+   <context:annotation-config/>
+
+   <!-- 不再需要constructor-arg  -->
+   <bean id="textEditor" class="com.tutorialspoint.TextEditor">
+   </bean>
+
+   <!-- Definition for spellChecker bean -->
+   <bean id="spellChecker" class="com.tutorialspoint.SpellChecker">
+   </bean>
+
+</beans>
+```
+
+* 用在属性上
+
+```java
+package com.tutorialspoint;
+import org.springframework.beans.factory.annotation.Autowired;
+public class TextEditor {
+   @Autowired
+   private SpellChecker spellChecker;
+   public TextEditor() {
+      System.out.println("Inside TextEditor constructor." );
+   }  
+   public SpellChecker getSpellChecker( ){
+      return spellChecker;
+   }  
+   public void spellCheck(){
+      spellChecker.checkSpelling();
+   }
+}
+```
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+   <context:annotation-config/>
+
+   <!-- property的set方法和构造方法都不要 -->
+   <bean id="textEditor" class="com.tutorialspoint.TextEditor">
+   </bean>
+
+   <!-- Definition for spellChecker bean -->
+   <bean id="spellChecker" class="com.tutorialspoint.SpellChecker">
+   </bean>
+
+</beans>
+```
+
+### @Qualifier注解的使用
+
+* 相当于`@Autowired`和`@Required`一起使用
+* 当需要创建多个具有相同类型的bean时, 如果只想用一个依赖为他们中的一个进行装配, 则可以使用`@Qualifier("{beanId}")`来指定具体使用哪个bean
+
+#### 示例
+
+* 解释
+    - 对于同一个依赖`Student`, 在xml中配置了两种初始化方式, 属性的初始值不同
+    - 在`Profile`类中使用`@Qualifier("student1")`指定了使用xml中id为`student1`的bean作为初始化
+
+```xml
+Beans.xml
+---------
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+   <context:annotation-config/>
+
+   <!-- Definition for profile bean -->
+   <bean id="profile" class="com.tutorialspoint.Profile">
+   </bean>
+
+   <!-- Definition for student1 bean -->
+   <bean id="student1" class="com.tutorialspoint.Student">
+      <property name="name"  value="Zara" />
+      <property name="age"  value="11"/>
+   </bean>
+
+   <!-- Definition for student2 bean -->
+   <bean id="student2" class="com.tutorialspoint.Student">
+      <property name="name"  value="Nuha" />
+      <property name="age"  value="2"/>
+   </bean>
+
+</beans>
+```
+
+```java
+Student.java
+------------
+package com.tutorialspoint;
+public class Student {
+   private Integer age;
+   private String name;
+   public void setAge(Integer age) {
+      this.age = age;
+   }   
+   public Integer getAge() {
+      return age;
+   }
+   public void setName(String name) {
+      this.name = name;
+   }  
+   public String getName() {
+      return name;
+   }
+}
+```
+
+```java
+Profile.java
+------------
+package com.tutorialspoint;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+public class Profile {
+   @Autowired
+   @Qualifier("student1")
+   private Student student;
+   public Profile(){
+      System.out.println("Inside Profile constructor." );
+   }
+   public void printAge() {
+      System.out.println("Age : " + student.getAge() );
+   }
+   public void printName() {
+      System.out.println("Name : " + student.getName() );
+   }
+}
+```
+
+```java
+MainApp.java
+------------
+package com.tutorialspoint;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
+public class MainApp {
+   public static void main(String[] args) {
+      ApplicationContext context = new ClassPathXmlApplicationContext("Beans.xml");
+      Profile profile = (Profile) context.getBean("profile");
+      profile.printAge();
+      profile.printName();
+   }
+}
+```
+
+```bash
+# 输出结果
+Inside Profile constructor.
+Age : 11
+Name : Zara
+```
+
+### @Configuration和@Bean注解的使用
+
+* `@Configuration`: 用在类上, 代替xml中的`<beans></beans>`
+* `@Bean`: 用在返回bean对象的方法上, 代替xml中的`<bean></bean>`
+    - 声明生命周期方法: `@Bean(initMethod="{初始化方法名}", destroyMethod="{销毁方法名}")`
+* `@Import({Class})`: 从另一个配置中加载Bean的定义
+* 需要使用`AnnotationConfigApplicationContext`来创建bean
+
+#### 示例
+
+* java注解的配置
+
+```java
+HelloWorldConfig.java
+---------------------
+package com.tutorialspoint;
+import org.springframework.context.annotation.*;
+@Configuration
+public class HelloWorldConfig {
+   @Bean
+   public HelloWorld helloWorld(){
+      return new HelloWorld();
+   }
+}
+```
+
+* 等同于xml中的配置
+
+```xml
+Beans.xml
+---------
+<beans>
+   <bean id="helloWorld" class="com.tutorialspoint.HelloWorld" />
+</beans>
+```
+
+* 创建bean
+
+```java
+public static void main(String[] args) {
+    /*
+    // 方式1: 空参创建ApplicationContext, 然后注册配置
+    AnnotationConfigApplicationContext ctx =
+       new AnnotationConfigApplicationContext();
+       ctx.register(AppConfig.class, OtherConfig.class);
+       ctx.register(AdditionalConfig.class);
+       ctx.refresh();
+    */
+    // 方式2: 直接指定配置类
+    ApplicationContext ctx = new AnnotationConfigApplicationContext(HelloWorldConfig.class);
+    // 创建bean
+    HelloWorld helloWorld = ctx.getBean(HelloWorld.class);
+    // 调用方法
+    helloWorld.setMessage("Hello World!");
+    helloWorld.getMessage();
+}
+```
+
+
+### 小结
 
 * 注解方式更简单, 用于取代xml配置
 * 步骤:
@@ -976,6 +1738,61 @@ ApplicationContext ac = new ClassPathXmlApplicationContext("applicationContext.x
 UserService us = (UserService) ac.getBean("userService");
 us.save();
 ```
+
+## Spring Context事件回调
+
+* `ApplicationContext`负责bean的完整生命周期, 有一系列的事件回调
+* 设置回调监听器
+    - 定义类实现`ApplicationListener<事件类型>`接口, 重写`public void onApplicationEvent(ContextStartedEvent event)`方法
+        - 可以定义多个类各自实现一个事件接口, 或者一个类实现多个事件接口
+    - 在xml配置文件中声明: `<bean id="cStartEventHandler" class="com.tutorialspoint.CStartEventHandler"/>`
+* 回调事件
+    - `ContextRefreshedEvent`: `ApplicationContext` 被初始化或刷新时, 该事件被发布. 这也可以在 `ConfigurableApplicationContext` 接口中使用 `refresh()` 方法来发生
+    - `ContextStartedEvent`: 当使用 `ConfigurableApplicationContext` 接口中的 `start()` 方法启动 `ApplicationContext` 时, 该事件被发布. 你可以调查你的数据库, 或者你可以在接受到这个事件后重启任何停止的应用程序
+    - `ContextStoppedEvent`: 当使用 `ConfigurableApplicationContext` 接口中的 `stop()` 方法停止 `ApplicationContext` 时, 发布这个事件. 你可以在接受到这个事件后做必要的清理的工作
+    - `ContextClosedEvent`: 当使用 `ConfigurableApplicationContext` 接口中的 `close()` 方法关闭 `ApplicationContext` 时, 该事件被发布. 一个已关闭的上下文到达生命周期末端; 它不能被刷新或重启
+    - `RequestHandledEvent`: web特有事件, 告诉所有bean的HTTP请求已经完成
+
+### 自定义事件
+
+* 步骤:
+    - 定义事件类, 继承`ApplicationEvent`
+    - 定义事件发布类, 实现`ApplicationEventPublisherAware`接口, 重写方法
+    - 在xml配置文件中声明事件发布类: `<bean id="customEventPublisher" class="com.tutorialspoint.CustomEventPublisher"/>`
+
+```java
+package com.tutorialspoint;
+import org.springframework.context.ApplicationEvent;
+public class CustomEvent extends ApplicationEvent{
+   public CustomEvent(Object source) {
+      super(source);
+   }
+   public String toString(){
+      return "My Custom Event";
+   }
+}
+```
+
+```java
+package com.tutorialspoint;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ApplicationEventPublisherAware;
+public class CustomEventPublisher
+   implements ApplicationEventPublisherAware {
+   private ApplicationEventPublisher publisher;
+   public void setApplicationEventPublisher
+              (ApplicationEventPublisher publisher){
+      this.publisher = publisher;
+   }
+   public void publish() {
+      CustomEvent ce = new CustomEvent(this);
+      publisher.publishEvent(ce);
+   }
+}
+```
+
+
+
 
 
 ## Spring整合JUnit单元测试
