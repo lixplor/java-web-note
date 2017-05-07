@@ -40,6 +40,19 @@
 * JDK
 * Spring框架官网:  [http://projects.spring.io/spring-framework/](http://projects.spring.io/spring-framework/)
 
+* maven
+
+```xml
+<dependencies>
+    <!-- spring-context 核心依赖 -->
+    <dependency>
+        <groupId>org.springframework</groupId>
+        <artifactId>spring-context</artifactId>
+        <version>4.3.7.RELEASE</version>
+    </dependency>
+</dependencies>
+```
+
 
 ## 快速入门
 

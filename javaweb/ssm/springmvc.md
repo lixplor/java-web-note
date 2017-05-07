@@ -143,7 +143,7 @@ dispatcher-servlet.xml
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xmlns:context="http://www.springframework.org/schema/context"
     xmlns:mvc="http://www.springframework.org/schema/mvc"
-    xsi:schemaLocation="http:www.springframework.org/schema/beans
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
     http://www.springframework.org/schema/beans/spring-beans.xsd
     http://www.springframework.org/schema/context
     http://www.springframework.org/schema/context/spring-context.xsd
@@ -323,4 +323,76 @@ xxx-servlet.xml
         <!-- 还可以定义其他的自定义异常 -->
     </property>
 </bean>
+```
+
+
+## SpringMVC实现上传文件
+
+* 步骤
+    - 添加`commons-fileupload`依赖
+    - 在`dispatcher-servlet.xml`中配置`CommonsMultipartResolver`上传文件解析器
+    - 在JSP页面增加表单上传文件
+    - 编写`Controller`处理文件上传, 读写流
+
+* 文件上传依赖
+
+```xml
+pom.xml
+-------
+<!-- 文件上传所依赖的jar包 -->  
+<dependency>  
+    <groupId>commons-fileupload</groupId>  
+    <artifactId>commons-fileupload</artifactId>  
+    <version>1.3.2</version>  
+</dependency>
+```
+
+* 在`dispatch-servlet.xml`中配置上传文件解析器
+
+```xml
+dispatch-servlet.xml
+--------------------
+<!-- 添加p标签 -->
+xmlns:p="http://www.springframework.org/schema/p"
+
+<!-- 上传文件的设置 ，maxUploadSize=-1，表示无穷大。uploadTempDir为上传的临时目录 -->  
+<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver"    
+    p:defaultEncoding="UTF-8"    
+    p:maxUploadSize="5400000"    
+    p:uploadTempDir="fileUpload/temp"    
+></bean>
+```
+
+* 上传文件的JSP
+
+```html
+<body>
+	<h2>上传文件</h2>
+	<form method="post" action="/upload" enctype="multipart/form-data">
+		<table>
+			<tr>
+				<td><input type="file" name="file"></td>
+			</tr>
+			<tr>
+				<td><input type="submit" name="upload"></td>
+			</tr>
+		</table>
+	</form>
+</body>
+```
+
+* 处理上传的Controller
+
+```java
+@Controller
+@RequestMapping("/upload")
+public class FileUploadController {
+
+	@RequestMapping(method = RequestMethod.POST)
+	public String uploadFile(@RequestParam("file")CommonsMultipartFile file) {
+		System.out.println(file.getOriginalFilename() + ", size=" + file.getSize());
+        // todo 读写流
+		return "upload-success";
+	}
+}
 ```
