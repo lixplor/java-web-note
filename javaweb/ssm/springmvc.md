@@ -2,6 +2,8 @@
 
 * 负责Web层, 替代Struts2. 是Spring框架中的一个组件
 * 处理请求返回响应
+* 请求驱动
+* 采用`前端控制器`设计模式
 * 基于MVC的设计思想
 
 与struts2的区别:
@@ -42,7 +44,18 @@
 
 ![原理图](http://www.yiibai.com/uploads/tutorial/20160116/1-1601161F914292.png)
 
-* 核心工作流程
+
+### DispatcherServlet
+
+* `DispatcherServlet`负责将所有的请求都由其分发到所需的功能中
+* `DispatcherServlet`采用了`前端控制器`的设计模式
+* `DispatcherServlet`是一个Servelt, 继承自`HttpServlet`, 所以也要在`web.xml`中声明为Servlet, 并映射对应的URL
+* 每个`DispatcherServlet`都持有一个自己的上下文对象`WebApplicationContext`
+* `DispatcherServlet`在初始化过程中, Spring MVC会在应用的`WEB-INF`目录下查找一个名为`{servlet-name}-servlet.xml`的配置文件, 并创建其中定义的bean
+  - `{servlet-name}`就是`web.xml`中配置`DispatcherServlet`的`<servlet-name></servlet-name>`的值
+
+
+## 核心工作流程
 
 ```
 +--------------+                              +---------------+
