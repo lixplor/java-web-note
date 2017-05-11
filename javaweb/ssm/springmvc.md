@@ -45,7 +45,7 @@
 ![原理图](http://www.yiibai.com/uploads/tutorial/20160116/1-1601161F914292.png)
 
 
-### DispatcherServlet
+## DispatcherServlet
 
 * `DispatcherServlet`负责将所有的请求都由其分发到所需的功能中
 * `DispatcherServlet`采用了`前端控制器`的设计模式
@@ -54,8 +54,28 @@
 * `DispatcherServlet`在初始化过程中, Spring MVC会在应用的`WEB-INF`目录下查找一个名为`{servlet-name}-servlet.xml`的配置文件, 并创建其中定义的bean
   - `{servlet-name}`就是`web.xml`中配置`DispatcherServlet`的`<servlet-name></servlet-name>`的值
 
+### WebApplicationContext中特殊的bean类型
 
-## 核心工作流程
+* `HandlerMapping`: 处理器映射
+    - 根据某些规则将进入容器的请求映射到具体的处理器以及一系列的前处理器和后处理器(即处理器拦截器)
+* `HandlerAdapter`: 处理器适配器
+    - 拿到请求所对应的处理器后, 适配器负责其调用该处理器, 使得`DispatcherServlet`无序关心具体的调用细节
+* `HandlerExceptionResolver`: 处理器异常解析器
+    - 负责将捕获的异常反射到不同的视图上去
+* `ViewResolver`: 视图解析器
+    - 负责讲一个代表逻辑视图名的字符串映射到实际的视图类型View上
+* `LocaleResolver`: 地区解析器
+    - 负责解析客户端所在地区信息和时区信息, 为国际化视图定制提供支持
+* `LocaleContextResolver`: 地区上下文解析器
+    - 负责解析客户端所在地区信息和时区信息, 为国际化视图定制提供支持
+* `ThemeResolver`: 主题解析器
+    - 负责解析web应用中可用的主题, 提供一些个性化定制的布局
+* `MultipartResolver`:
+    - 解析`multi-part`传输请求, 支持文件上传
+* `FlashMapManager`: FlashMap管理器
+    - 能够存储并取回两次请求之间的`FlashMap`对象, 后者可用于在请求之间传递数据, 通常是在请求重定向的情况下使用
+
+### DispatcherServlet工作流程
 
 ```
 +--------------+                              +---------------+
@@ -184,7 +204,21 @@ dispatcher-servlet.xml
 ```
 
 
-## 定义控制器Controller
+## 控制器(Controller)的实现
+
+* 控制器作为应用程序逻辑的处理入口, 负责调用开发人员实现的一些服务
+* 控制器接收并解析用户的请求, 将其转换成一个模型交给视图, 由视图渲染出页面, 最终呈献给用户
+
+### 定义控制器Controller
+
+* 注解方式
+    - `@Controller`: 指定一个类作为控制器
+        - 需要在xml中配置开启扫描: `<context:component-scan base-package="org.springframework.samples.petclinic.web"/>`
+        - `DispatcherServlet`会扫描所有注解了`@Controller`的类, 检测其中通过`@RequestMapping`注解配置的方法
+* xml方式
+
+
+### 小节
 
 * 注解: 被注解的方法都叫做`服务方法`, 用于处理特定请求
     - 处理请求的注解
