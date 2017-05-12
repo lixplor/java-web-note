@@ -38,7 +38,7 @@
 * Community步骤:
     - 同Ultimate
 
-### 关联Tomcat服务器
+### 关联本地Tomcat服务器
 
 * Ultimate版:
     - 已经集成了服务器插件, 直接配置即可
@@ -121,6 +121,32 @@ project/
     |_ .gitignore                          # git忽略配置
 ```
 
+### 关联远程Tomcat服务器
+
+* Ultimate版
+    - 已经集成了服务器插件, 直接配置即可
+        - 步骤
+            - 选择菜单栏的`Run`
+                - 选择`Edit Configuration`
+            - 左侧点击加号, 选择最底下的`xx more`, 会出现Tomcat相关选项
+                - 选择`Tomcat Server`, 然后选择`Remote`
+                    - 右侧目前是`Server`选项卡
+                        - `Name`写`vps.xxx.com`(表示远程服务器地址)
+                        - 点击`Application server`右侧的`Configure...`, 设置服务器安装的Tomcat, 确定
+                        - 取消勾选`After launch`
+                        - `Tomcat Server Setting`中
+                            - `JMX port`: 设置远程
+                            - `Type`选`sftp`
+                            - `Host`点击`...`按钮创建一个sftp连接
+                            - `Path from root`填`/`
+                            - `Mapping as`填服务器中Tomcat的`webapps`目录绝对路径
+                    - 点击选项卡的`Deployment`
+                        - 点击加号, 选择`Artifact`
+                            - 选择`xxx:war exploded`, 确认
+                        - 右侧出现`Application context`, 这是项目默认运行的地址
+                        - `Apply`, `OK`
+            - IDE主界面右上角会出现Tomcat的运行按钮, 点击三角运行
+
 ### gitignore
 
 ```
@@ -149,3 +175,51 @@ logs/
 
 
 ```
+
+
+## 使用maven部署项目到远程Tomcat服务器
+
+* 配置远程Tomcat服务器
+    - 必须有`manager`项目
+    - 编辑`tomcat-user.xml`, 添加部署用户
+
+```xml
+<user
+    username="deployer"
+    password="123456"
+    roles="manager-script"/>
+```
+
+* 配置maven-tomcat插件
+
+```xml
+pom.xml
+-------
+<properties>
+    <tomcat.plugin.version>2.2</tomcat.plugin.version>
+
+    <warPackageName>项目名称</warPackageName>
+    <tomcat.deploy.server>服务器地址</tomcat.deploy.server>
+    <tomcat.deploy.serverUrl>Tomcat地址/manager/text</tomcat.deploy.serverUrl>
+</properties>
+
+<build>
+    <plugins>
+        <!-- maven-tomcat插件 -->
+        <plugin>
+            <groupId>org.apache.tomcat.maven</groupId>
+            <artifactId>tomcat7-maven-plugin</artifactId>
+            <version>${tomcat.plugin.version}</version>
+            <configuration>
+                <server>${tomcat.deploy.server}</server>
+                <username>Tomcat用户名</username>
+                <password>Tomcat用户密码</password>
+                <url>${tomcat.deploy.serverUrl}</url>
+                <path>/</path>
+            </configuration>
+        </plugin>
+    </plugins>
+</build>
+```
+
+* 执行发布命令: `mvn tomcat:7 redeploy`

@@ -209,13 +209,76 @@ dispatcher-servlet.xml
 * 控制器作为应用程序逻辑的处理入口, 负责调用开发人员实现的一些服务
 * 控制器接收并解析用户的请求, 将其转换成一个模型交给视图, 由视图渲染出页面, 最终呈献给用户
 
-### 定义控制器Controller
+### @Controller 定义控制器
 
-* 注解方式
-    - `@Controller`: 指定一个类作为控制器
-        - 需要在xml中配置开启扫描: `<context:component-scan base-package="org.springframework.samples.petclinic.web"/>`
-        - `DispatcherServlet`会扫描所有注解了`@Controller`的类, 检测其中通过`@RequestMapping`注解配置的方法
-* xml方式
+* 开启注解扫描:
+    - 在xml中配置: `<context:component-scan base-package="org.springframework.samples.petclinic.web"/>`
+    - `DispatcherServlet`会扫描所有注解了`@Controller`的类, 检测其中通过`@RequestMapping`注解配置的方法
+* `@Controller`: 指定一个类作为控制器
+
+### @RequestMapping 映射请求路径
+
+* `@RequestMapping`注解可以将URL映射到2个地方:
+    - 类: 将一个特定的请求路径映射到控制器上, 即定义该类处理统一的一个URL
+    - 方法: 细化类的映射, 即定义不同方法处理同一个URL的子路径或不同HTTP方法
+
+```java
+@Controller
+@RequestMapping("/appointments")
+public class AppointmentsController {
+
+    @Autowired
+    public AppointmentsController(AppointmentBook appointmentBook) {
+        this.appointmentBook = appointmentBook;
+    }
+
+    @RequestMapping(method = RequestMethod.GET)
+    public Map<String, Appointment> get() {
+        return appointmentBook.getAppointmentsForToday();
+    }
+
+    @RequestMapping(path = "/{day}", method = RequestMethod.GET)
+    public Map<String, Appointment> getForDay(@PathVariable @DateTimeFormat(iso = ISO.DATE) Date day, Model model) {
+        return appointmentBook.getAppointmentsForDay(day);
+    }
+}
+```
+
+
+## URI模板
+
+* `{变量}`: 在URI中使用该模板代替路径
+* `@PathVariable`: 将URI模板与参数绑定
+    - `@PathVariable 数据类型 模板变量名`
+    - `@PathVariable("模板变量名") 数据类型 新变量名`
+* 一个方法可以拥有任意数量的URI模板和`@PathVariable`注解
+* URI模板支持使用正则表达式
+
+```java
+// 直接使用模板变量名
+@RequestMapping(path = "/owner/{ownerId}", method = RequestMethod.GET)
+public String findOwner(@PathVariable String ownerId, Model model) {
+    Owner owner = ownerService.findOwner(ownerId);
+    model.addAttribute("owner", owner);
+    return "displayOwner";
+}
+
+// 不使用模板变量名, 使用新的变量名
+@RequestMapping(path = "/owner/{ownerId}", method = RequestMethod.GET)
+public String findOwner(@PathVariable("ownerId") String theOwner, Model model) {
+    Owner owner = ownerService.findOwner(theOwner);
+    model.addAttribute("owner", owner);
+    return "displayOwner";
+}
+
+// 使用正则的URI模板
+@RequestMapping("/spring-web/{symbolicName:[a-z-]+}-{version:\\d\\.\\d\\.\\d}{extension:\\.[a-z]+}")
+    public void handle(@PathVariable String version, @PathVariable String extension) {
+        // 代码部分省略...
+    }
+}
+```
+
 
 
 ### 小节
