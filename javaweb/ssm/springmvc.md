@@ -244,8 +244,7 @@ public class AppointmentsController {
 }
 ```
 
-
-## URI模板
+### URI模板
 
 * `{变量}`: 在URI中使用该模板代替路径
 * `@PathVariable`: 将URI模板与参数绑定
@@ -279,6 +278,20 @@ public String findOwner(@PathVariable("ownerId") String theOwner, Model model) {
 }
 ```
 
+### Path Pattern路径模板
+
+* 支持Ant风格的路径模式, 如`/myPath/*.do`
+* 当 URL 同时匹配多个模板时, 模板会进行排序以便找到最匹配的
+    - 匹配原则:
+        - 原则1: URI模板变量的数目和通配符数量的 **总和** 最少的那个路径模板更匹配
+            - 如: `/hotels/{hotel}/*`和`/hotels/{hotel}/**`, 前者有1个变量和1个通配符, 后者有2个变量和2个通配符, 所以前者总和最少更匹配
+        - 原则2: 如果两个模板的URI模板数量和通配符数量总和一致, 则路径更长的模板更匹配
+            - 如: `/foo/bar*`和`/foo/*`, 两者都只有1个通配符, 前者路径更长更匹配
+        - 原则3: 如果两个模板的数量和长度均一致, 则具有更少通配符的模板更匹配
+            - 如: `/hotels/{hotel}`和`/hotels/*`, 前者有1个变量, 后者有1个通配符, 数量总和和长度一致, 但前者通配符更少更匹配
+        - 其他原则:
+            - 默认通配模式: `/**`比其他所有模式都更不匹配, 如`/api/{a}/{b}/{c}`比`/**`更匹配
+            - 更多可参考`AntPatternComparator`和`AntPathMatcher`
 
 
 ### 小节
