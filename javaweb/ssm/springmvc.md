@@ -293,6 +293,14 @@ public String findOwner(@PathVariable("ownerId") String theOwner, Model model) {
             - 默认通配模式: `/**`比其他所有模式都更不匹配, 如`/api/{a}/{b}/{c}`比`/**`更匹配
             - 更多可参考`AntPatternComparator`和`AntPathMatcher`
 
+### 后缀模式匹配
+
+* Spring MVC 默认采用`".*"`的后缀模式来进行路径匹配, 如`/person`也会被映射到`/person.*`
+* 可以关闭默认的后缀模式匹配, 避免产生歧义或安全问题
+* RFD(Reflected file download)攻击依赖于浏览器跳转到下载页面, 将特定格式的响应当做可执行脚本
+    - `@ResponseBody`和`@ResponseEntity`方法都有风险
+    - 防范方法: 在请求头增加一行`Content-Disposition:inline;filename=f.txt`指定固定的下载文件名
+
 
 ### 小节
 
