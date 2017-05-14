@@ -301,6 +301,40 @@ public String findOwner(@PathVariable("ownerId") String theOwner, Model model) {
     - `@ResponseBody`和`@ResponseEntity`方法都有风险
     - 防范方法: 在请求头增加一行`Content-Disposition:inline;filename=f.txt`指定固定的下载文件名
 
+### 矩阵变量
+
+* `Matrix Variable`, 矩阵参数, 在路径中包含键值对, 如`/cars;color=red,blue;year=2012`
+* 需要在配置中启用矩阵变量: `<mvc:annotation-driven enable-matrix-variables="true"/>`
+* 使用`@MatrixVariable`注解来获取路径中的矩阵变量
+    - `name`: 键
+    - `pathVar`: 路径
+    - `required`: 是否必须
+    - `defaultValue`: 默认值
+* 也可以通过Map将矩阵变量中的键值对都保存起来: `@MatrixVariable Map<String, String> matrixVars`
+
+```java
+// GET /owners/42;q=11/pets/21;q=22
+
+@RequestMapping(path = "/owners/{ownerId}/pets/{petId}", method = RequestMethod.GET)
+public void findPet(
+    @MatrixVariable(name="q", pathVar="ownerId") int q1,
+    @MatrixVariable(name="q", pathVar="petId") int q2) {
+
+    // q1 == 11
+    // q2 == 22
+
+}
+```
+
+### 可消费媒体类型
+
+* 可以在`@RequestMapping`中使用`consumes="xxx"`指定匹配请求的`Content-Type`头来缩小映射范围, 如: `@RequestMapping(method = RequestMethod.POST, consumes="application/json")`
+* 媒体类型表达式中可以使用`!`来表示相反, 如: `consume=!text/plain`匹配所有不含`text/plain`的请求
+
+### 可生产媒体类型
+
+* 可以在`@RequestMapping`中使用`produces="xxx"`指定匹配请求的`Accept`头来缩小映射范围, 如: `@RequestMapping(method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)`
+* 媒体类型表达式中可以使用`!`来表示相反, 如: `consume=!text/plain`匹配所有不含`text/plain`的请求
 
 ### 小节
 
