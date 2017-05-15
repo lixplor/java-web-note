@@ -336,6 +336,26 @@ public void findPet(
 * 可以在`@RequestMapping`中使用`produces="xxx"`指定匹配请求的`Accept`头来缩小映射范围, 如: `@RequestMapping(method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_UTF8_VALUE)`
 * 媒体类型表达式中可以使用`!`来表示相反, 如: `consume=!text/plain`匹配所有不含`text/plain`的请求
 
+### 使用请求头筛选来匹配请求
+
+* 格式: `params="键=值"`
+* 允许的筛选方式:
+    - 键: `params="myParam"`
+    - 键取反: `params="!myParam"`
+    - 键值对: `params="myParam=myValue"`
+
+```java
+@Controller
+@RequestMapping("/owners/{ownerId}")
+public class RelativePathUriTemplateController {
+
+    @RequestMapping(path = "/pets/{petId}", method = RequestMethod.GET, params="myParam=myValue")
+    public void findPet(@PathVariable String ownerId, @PathVariable String petId, Model model) {
+        // 实际实现省略
+    }
+}
+```
+
 ### 小节
 
 * 注解: 被注解的方法都叫做`服务方法`, 用于处理特定请求
