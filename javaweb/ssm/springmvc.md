@@ -216,7 +216,8 @@ dispatcher-servlet.xml
     - `DispatcherServlet`会扫描所有注解了`@Controller`的类, 检测其中通过`@RequestMapping`注解配置的方法
 * `@Controller`: 指定一个类作为控制器
 
-### @RequestMapping 映射请求路径
+
+## @RequestMapping 映射请求路径
 
 * `@RequestMapping`注解可以将URL映射到2个地方:
     - 类: 将一个特定的请求路径映射到控制器上, 即定义该类处理统一的一个URL
@@ -355,6 +356,32 @@ public class RelativePathUriTemplateController {
     }
 }
 ```
+
+
+## 如何定义@RequestMapping注解的处理方法
+
+* 方法支持的参数类型
+    - `ServletRequest`或`HttpServletRequest`: Servlet请求或相应对象
+    - `HttpSession`: 会话对象. 要求session必须存在, 不能为null
+    - `org.springframework.web.context.request.WebRequest`或`org.springframework.web.context.request.NativeWebRequest`: 用于存取一般的请求参数和请求/会话范围的attribute
+    - `java.util.Locale`: 请求的地区信息, 通过地区解析器获得, 在SpringMVC中是`LocaleResolver`或`LocaleContextResolver`
+    - `java.io.InputStream`或`java.io.Reader`: 与Servlet拿到的输出流是一样的
+    - `org.springframework.http.HttpMethod`: HTTP的请求方法
+    - `java.security.Principal`: 被认证用户信息
+    - `@PathVariable`注解的参数: URI模板的路径变量
+    - `@MatrixVariable`注解的参数: URI模板的矩阵变量
+    - `@RequestParam`注解的参数: 请求参数
+    - `@RequestHeader`注解的参数: HTTP请求头
+    - `@RequestBody`注解的参数: HTTP请求体
+    - `@RequestPart`注解的参数: `multipart/form-data`请求内容
+    - `HttpEntity<?>`: HTTP请求实体, 包括HTTP请求头和请求体
+    - `java.util.Map`或`org.springframework.io.Model`或`org.springframework.ui.ModelMap`: 增强model
+    - `org.springframework.web.servlet.mvc.support.RedirectAttributes`: 指定重定向下要使用到的属性集和flash属性
+    - 命令或表单对象: 将请求参数绑定到bean
+    - `org.springframework.validation.Errors`或`org.springframework.validation.BindingResult`: 验证结果对象, 存储前面的命令或表单对象的验证结果
+        - 这两个类的参数必须紧跟在其所绑定的验证对象后面, 顺序不能错
+    - `org.springframework.web.bind.support.SessionStatus`: 标记当前表单已经处理结束, 出发一些清理操作
+    - `org.springframework.web.util.UriComponentsBuilder`: 请求URL的构造信息对象, 可获取主机名, 端口号, 资源类型, 上下文路径, servlet映射中的literal part等
 
 ### 小节
 
