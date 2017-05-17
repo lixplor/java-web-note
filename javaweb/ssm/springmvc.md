@@ -208,6 +208,7 @@ dispatcher-servlet.xml
 
 * 控制器作为应用程序逻辑的处理入口, 负责调用开发人员实现的一些服务
 * 控制器接收并解析用户的请求, 将其转换成一个模型交给视图, 由视图渲染出页面, 最终呈献给用户
+* 控制器中的方法称为处理器方法(Handler method)
 
 ### @Controller 定义控制器
 
@@ -382,6 +383,22 @@ public class RelativePathUriTemplateController {
         - 这两个类的参数必须紧跟在其所绑定的验证对象后面, 顺序不能错
     - `org.springframework.web.bind.support.SessionStatus`: 标记当前表单已经处理结束, 出发一些清理操作
     - `org.springframework.web.util.UriComponentsBuilder`: 请求URL的构造信息对象, 可获取主机名, 端口号, 资源类型, 上下文路径, servlet映射中的literal part等
+* 方法支持的返回值类型
+    - `ModelAndView`对象: model隐含填充了命令对象, 注解了`@ModelAttribute`字段的存取器被调用所返回的值
+    - `Model`对象: 视图名称默认由`RequestToViewNameTranslator`决定, model隐含填充了命令对象以及注解了`@ModelAttribute`字段的存取器被调用所返回的值
+    - `Map`对象: 用于暴露model, 其中视图名称默认由`RequestToViewNameTranslator`决定, model隐含填充了命令对象以及注解了`@ModelAttribute`字段的存取器被调用所返回的值. handler方法也可以增加一个`Model`类型的方法参数来增强model
+    - `String`对象: 该字符串会被解析成一个逻辑视图名. model默认填充了命令对象以及注解了`@ModelAttribute`字段的存取器被调用所返回的值. handler方法也可以增加一个`Model`类型的方法参数来增强model
+    - `void`: 如果处理器方法中已经对response响应数据进行了处理(如在方法参数中定义一个`ServletResponse`或`HttpServletResponse`并直接向该响应写内容), 则可以返回void
+    - 如果处理器方法注解了`@ResponseBody`, 则返回类型江北写到HTTP响应提中, 而返回值会被`HttpMessageConverters`转换成方法声明的参数类型
+    - `HttpEntity<?>`或`ResponseEntity<?>`对象: 用于提供对Servlet HTTP响应头和相应内容的存取. 对象会被`HttpMessageConverters`转换成响应流
+    - `HttpHeaders`对象: 返回一个不含响应体的response
+    - `Callable<?>`对象: 异步返回方法值时使用. 该过程由SpringMVC自身的线程来管理
+    - `DeferredResult<?>`对象: 当方法的返回值交由线程自身决定时使用
+    - `ListenableFuture<?>`对象: 当方法的返回值交由线程自身决定时使用
+    - `ResponseBodyEmitter`对象: 异步地向响应体中同时写多个对象
+    - `SseEmitter`对象: 异步地向响应体中写服务器端事件(Server-sent Events)
+    - `StreamingResponseBody`对象: 异步地向响应对象的输出流中写内容
+    - 其他任何返回类型: 会被处理成model的一个属性并返回给视图, 该属性的名称为方法级的`@ModelAttibute`所注解的字段名(或以返回类型的类名作为默认的属性名).
 
 ### 小节
 
