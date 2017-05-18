@@ -400,6 +400,51 @@ public class RelativePathUriTemplateController {
     - `StreamingResponseBody`对象: 异步地向响应对象的输出流中写内容
     - 其他任何返回类型: 会被处理成model的一个属性并返回给视图, 该属性的名称为方法级的`@ModelAttibute`所注解的字段名(或以返回类型的类名作为默认的属性名).
 
+### @RequestParam 映射请求参数至控制器方法形参
+
+* 该方法适用于映射URL中的请求参数
+* 格式:
+    - `public 返回值类型 控制器方法名(@RequestParam("{GET请求参数的key}") 数据类型 变量名) {}`
+        - 将请求的参数映射到控制器方法的形参上. 默认该请求参数是必须的
+    - `public 返回值类型 控制器方法名(@RequestParam(path="{GET请求参数的key}", request={参数是否必须}) 数据类型 变量名) {}`
+        - 将请求的参数映射到控制器方法的形参上, 同时指定该参数是否必须提供
+* 若`@RequestParam`注解的参数类型是`Map<String, String>`或`MultiValueMap<String, String>`, 则该Map中会自动填充所有的请求参数
+
+```java
+@Controller
+@RequestMapping("/pets")
+@SessionAttributes("pet")
+public class EditPetForm {
+    @RequestMapping(method = RequestMapping.GET)
+    public String setupForm(@RequestParam("petId") int petId, ModelMap model) {
+        Pet pet = this.clinic.loadPet(petId);
+        model.addAttribute("pet", pet);
+        return "petForm";
+    }
+}
+```
+
+### @RequestBody 映射请求体
+
+* 该方法适用于映射请求体中的参数
+* 格式:
+    - `public 返回值类型 控制器方法名(@RequestBody 数据类型 变量名) {}`
+        - 将请求体映射到控制器方法的形参上
+* 请求体到方法形参的转换由`HttpMessageConverter`完成, 它负责将HTTP请求信息转换为对象, 或是将对象转换为一个HTTP响应体. 对于该注解, `RequestMappingHandlerAdapter`提供了集中默认的`HttpMessageConverter`的支持:
+    - `ByteArrayHttpMessageConverter`用以转换字节数组
+    - `StringHttpMessageConverter`用以转换字符串
+    - `FormHttpMessageConverter`用以将表格数据转换成`MultiValueMap<String, String>`或从`MultiValueMap<String, String>`中转换出表格数据
+    - `SourceHttpMessageConverter`用于`javax.xml.transform.Source`类的互相转换
+* 使用`@RequestBody`的方法形参还可以被`@Valid`注解, 从而被已配置的`Validator`示例来对该参数进行验证
+
+```java
+@RequestMapping(path = "/something", method = RequestMethod.PUT)
+public void handle(@RequestBody String body, Writer writer) throws IOException {
+    writer.write(body);
+}
+```
+
+
 ### 小节
 
 * 注解: 被注解的方法都叫做`服务方法`, 用于处理特定请求
