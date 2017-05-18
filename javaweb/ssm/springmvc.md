@@ -402,7 +402,8 @@ public class RelativePathUriTemplateController {
 
 ### @RequestParam 映射请求参数至控制器方法形参
 
-* 该方法适用于映射URL中的请求参数
+* 该注解适用于映射URL中的请求参数
+* 使用位置: 控制器方法的形参前
 * 格式:
     - `public 返回值类型 控制器方法名(@RequestParam("{GET请求参数的key}") 数据类型 变量名) {}`
         - 将请求的参数映射到控制器方法的形参上. 默认该请求参数是必须的
@@ -426,7 +427,8 @@ public class EditPetForm {
 
 ### @RequestBody 映射请求体
 
-* 该方法适用于映射请求体中的参数
+* 该注解适用于映射请求体中的参数
+* 使用位置: 控制器方法的形参前
 * 格式:
     - `public 返回值类型 控制器方法名(@RequestBody 数据类型 变量名) {}`
         - 将请求体映射到控制器方法的形参上
@@ -441,6 +443,50 @@ public class EditPetForm {
 @RequestMapping(path = "/something", method = RequestMethod.PUT)
 public void handle(@RequestBody String body, Writer writer) throws IOException {
     writer.write(body);
+}
+```
+
+### @ResponseBody 映射响应体
+
+* 该注解用于映射返回的响应体
+* 使用位置: 方法上
+* 对象到响应体的转换也是使用`HttpMessageConverter`
+
+```java
+@RequestMapping(path = "/something", method = RequestMethod.PUT)
+@ResponseBody
+public String helloWorld() {
+    return "Hello World";  // 因为使用了@ResponseBody, 所以返回字符串, 而不是字符串所代表的的视图
+}
+```
+
+### @RestController 创建Rest控制器
+
+* 该注解用于将控制器类定义为Rest控制器, 从而让所有控制器方法返回的都是对象
+* 使用位置: 控制器类上
+* 作用: 如果希望实现Rest返回, 不需要在每个控制器方法上都加上`@ResponseBody`来返回对象, 只需要对控制器的类使用`@RestController`的注解
+* 相当于结合了`@Controller`和`@ResponseBody`
+
+### 使用HttpEntity和ResponseEntity
+
+* `HttpEntity`: 获取请求体中的内容, 还可以存取请求头. 与`@RequestBody`相似
+* `ResponseEntity`: 获取响应体中的内容, 还可以存取响应头. 与`@ResponseBody`相似
+* 也是使用`HttpMessageConverter`来将请求流和响应流进行转换
+
+```java
+@RequestMapping("/something")
+public ResponseEntity<String> handle(HttpEntity<byte[]> requestEntity) throws UnsupportedEncodingException {
+    // 从HttpEntity中获取请求头
+    String requestHeader = requestEntity.getHeaders().getFirst("MyRequestHeader");
+    // 从HttpEntity中获取请求体
+    byte[] requestBody = requestEntity.getBody();
+
+    // do something with request header and body
+
+    HttpHeaders responseHeaders = new HttpHeaders();
+    responseHeaders.set("MyResponseHeader", "MyValue");
+    // 创建ResponseEntity并设置响应头
+    return new ResponseEntity<String>("Hello World", responseHeaders, HttpStatus.CREATED);
 }
 ```
 
