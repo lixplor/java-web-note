@@ -425,6 +425,29 @@ public class EditPetForm {
 }
 ```
 
+### @RequestHeader 映射请求头属性
+
+* 该注解适用于控制器方法的形参上
+* 能够将一个请求头属性绑定到一个方法形参上
+* 可以使用该注解应用在`Map<String, String>`, `MultiValueMap<String, String>`, 或`HttpHeaders`类型的参数上, 这样所有请求头属性值都会被填充到map中
+
+```java
+/*
+Host                    localhost:8080
+Accept                  text/html,application/xhtml+xml,application/xml;q=0.9
+Accept-Language         fr,en-gb;q=0.7,en;q=0.3
+Accept-Encoding         gzip,deflate
+Accept-Charset          ISO-8859-1,utf-8;q=0.7,*;q=0.7
+Keep-Alive              300
+*/
+
+@RequestMapping("/displayHeaderInfo.do")
+public void displayHeaderInfo(@RequestHeader("Accept-Encoding") String encoding,
+        @RequestHeader("Keep-Alive") long keepAlive) {
+    //...
+}
+```
+
 ### @RequestBody 映射请求体
 
 * 该注解适用于映射请求体中的参数
@@ -530,8 +553,65 @@ public String processSubmit(@ModelAttribute("pet") Pet pet, BindingResult result
 }
 ```
 
+### @SessionAttributes 让HTTP session保存model数据
 
-### 小节
+* 该注解适用于控制器类上
+* 用于声明某个特定处理器所使用的session属性. 一般用于在请求之间保存一些表单数据的bean
+
+```java
+@Controller
+@RequestMapping("/editPet.do")
+@SessionAttributes("pet")
+public class EditPetForm {
+    // ...
+}
+```
+
+### 配置拦截`application/x-www-form-urlencoded`数据
+
+* 由于Servlet中只支持通过`HTTP POST`方法提交表单, 但非浏览器客户端实际上也可以通过`PUT`或`PATCH`方法来提交表单, 为了处理这种情况, 需要配置拦截器拦截`content type`为`application/x-www-form-urlencoded`的请求
+* 在`web.xml`文件中配置:
+
+```xml
+<filter>
+    <filter-name>httpPutFormFilter</filter-name>
+    <filter-class>org.springframework.web.filter.HttpPutFormContentFilter</filter-class>
+</filter>
+
+<filter-mapping>
+    <filter-name>httpPutFormFilter</filter-name>
+    <servlet-name>dispatcherServlet</servlet-name>
+</filter-mapping>
+
+<servlet>
+    <servlet-name>dispatcherServlet</servlet-name>
+    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+</servlet>
+```
+
+### @CookieValue 映射cookie
+
+* 该注解适用于控制器方法的形参上
+* 该注解能将HTTP的cookie值绑定到控制器方法的形参上
+* 若注解的目标方法形参类型不是`String`类型, 则会自动转换为`String`类型
+
+```java
+// JSESSIONID=415A4AC178C59DACE0B2C9CA727CDD84
+
+@RequestMapping("/displayHeaderInfo.do")
+public void displayHeaderInfo(@CookieValue("JSESSIONID") String cookie) {
+    //...
+}
+```
+
+### 方法形参的类型转换
+
+* 从请求参数, 路径变量, 请求头属性, cookie中获取到的`String`类型的值, 可能需要转换为形参的类型. 这一过程会自动转换.
+* 简单的类型如int, long, Date内置了类型转换的支持
+* 其他类型可以通过`WebDataBinder`实现, 或为`Formatters`配置一个`FormattingConversionService`实现
+
+
+### 小结
 
 * 注解: 被注解的方法都叫做`服务方法`, 用于处理特定请求
     - 处理请求的注解
