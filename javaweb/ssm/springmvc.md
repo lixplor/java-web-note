@@ -218,7 +218,7 @@ dispatcher-servlet.xml
 * `@Controller`: 指定一个类作为控制器
 
 
-## @RequestMapping 映射请求路径
+### @RequestMapping 映射请求路径
 
 * `@RequestMapping`注解可以将URL映射到2个地方:
     - 类: 将一个特定的请求路径映射到控制器上, 即定义该类处理统一的一个URL
@@ -359,7 +359,7 @@ public class RelativePathUriTemplateController {
 ```
 
 
-## 如何定义@RequestMapping注解的处理方法
+### 如何定义@RequestMapping注解的处理方法
 
 * 方法支持的参数类型
     - `ServletRequest`或`HttpServletRequest`: Servlet请求或相应对象
@@ -514,7 +514,7 @@ public ResponseEntity<String> handle(HttpEntity<byte[]> requestEntity) throws Un
 ```
 
 
-## @ModelAttribute 注解方法和方法的形参
+### @ModelAttribute 注解方法和方法的形参
 
 * 该注解可以应用在方法或方法的形参上
 * 对方法使用注解
@@ -610,68 +610,6 @@ public void displayHeaderInfo(@CookieValue("JSESSIONID") String cookie) {
 * 简单的类型如int, long, Date内置了类型转换的支持
 * 其他类型可以通过`WebDataBinder`实现, 或为`Formatters`配置一个`FormattingConversionService`实现
 
-
-### 小结
-
-* 注解: 被注解的方法都叫做`服务方法`, 用于处理特定请求
-    - 处理请求的注解
-        - `@Controller`: 指定该类作为控制器
-        - `@RequestMapping(String url)`: 用于类. 将整个类映射到URL, 当该类所有方法都是处理这个url时可以这样配置, 这样只需要在方法上配置其他属性即可, 如method等
-        - `@RequestMapping(value = String url, method = RequestMethod method)`: 用于方法. 指定该方法是处理指定url的指定HTTP方法的. 如果类没有配置url, 则请求以`方法url`为准; 如果类也配置了url, 则请求为`类url/方法url`
-            - `value`: 指示处理程序方法映射的url
-            - `method`: 定义处理HTTP method请求的服务方法
-    - 处理视图属性的注解
-        - `@ModelAttribute("HelloWeb")`
-    - 处理局部异常的注解
-        - `@ExceptionHandler({ExceptionClass1, ExceptionClass2, ...})`: 指定该服务方法需要处理的异常
-* 返回值
-    - 返回字符串, 作为视图:
-        - 返回一个String字符串, 它是渲染视图的名称
-        - 如: `return "hello";`
-    - 返回ModelAndView:
-        - 通过构造一个ModelAndView对象来保存视图和数据并将其返回
-        - 如: `return new ModelAndView("success", student);`
-    - 返回Model:
-        - 即返回一个对象
-    - 返回ModelMap:
-        - 将模型数据返回页面, 页面url不变. ModelMap以键值对方式存储多个数据
-    - 返回Map:
-        - 和ModelMap一样
-    - 返回List:
-        - 将模型数据返回页面, 页面url不变. 数据放在List中
-    - 返回Set:
-        - 将模型数据返回页面, 页面url不变. 数据放在Set中
-    - 重定向请求:
-        - 返回一个特殊的字符串`redirect:服务方法名`, 跳转到该方法处理
-        - 如: `login()`方法中登录成功, 则重定向到成功页面, `login()`先`return "redirect:success";`, 然后`success()`方法中`return "loginSuccess";`, 跳转到`loginSuccess.jsp`页面
-    - 重定向到静态资源:
-        - 返回一个特殊的字符串`redirect:/静态资源目录/静态资源文件名.后缀`
-        - 需要在`web.xml`中配置`<mvc:resources>`指定静态资源目录
-        - 如: `return "redirect:/pages/final.htm";`
-    - 转发:
-        - 返回一个特殊的字符串`forward:{url}`, 将请求转发给指定url
-    - Void:
-        - 即没有返回值, 不写`return`. 此时页面还是请求路径的页面
-* 注意
-    - 在每个服务方法中, 会创建一个模型. 可以设置不同的模型属性, 这些属性将被视图访问来显示视图.
-    - 定义的服务方法可以返回一个`String`, 作为渲染视图的名称
-
-### 示例
-
-```java
-访问localhost:${port}/hello/mvc所进行的请求处理
-@Controller
-@RequestMapping("/hello")
-public class HelloController {
-    @RequestMapping(value = "/mvc", method = RequestMethod.GET)
-    public String printHello(ModelMap model) {
-        // 向模型中添加属性, 可在视图中获取进行显示
-        model.addAttribute("message", "Hello Spring MVC Framework!");
-        // 设置视图的名称, 会显示hello.jsp
-        return "hello";
-   }
-}
-```
 
 
 ## 定义视图
