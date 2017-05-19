@@ -491,6 +491,46 @@ public ResponseEntity<String> handle(HttpEntity<byte[]> requestEntity) throws Un
 ```
 
 
+## @ModelAttribute 注解方法和方法的形参
+
+* 该注解可以应用在方法或方法的形参上
+* 对方法使用注解
+    - 作用: 添加一个或多个属性到model上, 如公共需要的属性或数据, 例如一个下拉列表所预设的几种状态. 这样的方法能接收与`@RequestMapping`注解相同的参数类型, 只不过不能直接被映射到具体的请求上.
+    - 2种风格:
+        - 方法通过返回值的方式默认地添加一个属性, 可以使用`@ModelAttribute("{key}")`来修改model中的键
+        - 方法接收一个`Model`对象, 然后可以向其中添加任意数量的属性
+    - 特点
+        - 一个控制器可以拥有数量不限的`@ModelAttribute`方法
+        - 注解了`@ModelAttribute`的方法会在`@RequestMapping`方法之前被调用
+* 对形参使用注解
+    - 作用: 从model中获取参数值.
+    - 数据绑定: 如果model中找不到参数值, 则该参数会先被实例化, 然后被添加到model中. model中存在以后, 请求中所有名称匹配的参数都会填充到该参数中
+    - 数据校验: 数据绑定过程中可能会出现一些错误, 如没有提供必要的字段, 类型转换错误等. 可以在注解了`@ModelAttribute`的参数后紧接着声明一个`BindingResult`参数. 或是添加一个`@Valid`注解到`@ModelAttribute`注解前
+
+```java
+// 注解到方法上, 风格1, 返回值被添加到model中的account属性值中
+@ModelAttribute
+public Account addAccount(@RequestParam String number) {
+    return accountManager.findAccount(number);
+}
+
+// 注解到方法上, 风格2, 添加多个属性到model中
+public void populateModel(@RequestParam String number, Model model) {
+    model.addAttribute(accountManager.findAccount(number));
+    // add more ...
+}
+
+// 注解到形参上
+@RequestMapping(path = "/owners/{ownerId}/pets/{petId}/edit", method = RequestMethod.POST)
+public String processSubmit(@ModelAttribute("pet") Pet pet, BindingResult result) {
+    new PetValidator().validate(pet, result);
+    if (result.hasErrors()) {
+        return "petForm";
+    }
+}
+```
+
+
 ### 小节
 
 * 注解: 被注解的方法都叫做`服务方法`, 用于处理特定请求
