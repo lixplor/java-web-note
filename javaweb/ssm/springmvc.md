@@ -610,7 +610,57 @@ public void displayHeaderInfo(@CookieValue("JSESSIONID") String cookie) {
 * 简单的类型如int, long, Date内置了类型转换的支持
 * 其他类型可以通过`WebDataBinder`实现, 或为`Formatters`配置一个`FormattingConversionService`实现
 
+### 异步请求的处理
 
+* 实现异步返回值有2种方式
+    - 返回一个`java.util.concurrent.Callable`对象
+        - 这些线程由SpringMVC来管理, 通过一个`TaskExecutor`在另外的线程中调用`Callable`, 当`Callable`返回时, 请求再携带`Callable`返回的值, 再次被分配到Servlet容器中恢复处理流程
+    - 返回一个`DefferredResult`对象
+        - 返回值可以由任何一个线程产生, 包括不是由SpringMVC管理的线程
+* 实现异步请求的原理
+    - 底层都依赖Servlet 3.0的异步请求处理特性:
+        - 一个servlet请求`ServletRequest`可以通过调用`request.startAsync()`方法而进入异步模式. 这样做的主要结果就是该servlet以及所有的过滤器都可以结束,但其响应(response)会留待异步处理结束后再返回
+        - 调用`request.startAsync()`方法会返回一个`AsyncContext`对象, 可用它对异步处理进行进一步的控制和操作. 比如说它也提供了一个与转向(forward)很相似的dispatch方法, 只不过它允许应用恢复Servlet容器的请求处理进程
+        - `ServletRequest`提供了获取当前`DispatherType`的方式, 后者可以用来区别当前处理的是原始请求, 异步分发请求, 转向, 或是其他类型的请求分发类型
+    - Callable异步请求的原理:
+        - 控制器先返回一个`Callable`对象
+        - Spring MVC开始进行异步处理, 并把该`Callable`对象提交给另一个独立线程的执行器`TaskExecutor`处理
+        - `DispatcherServlet`和所有过滤器都退出Servlet容器线程, 但此时方法的响应对象仍未返回
+        - `Callable`对象最终产生一个返回结果, 此时Spring MVC会重新把请求分派回Servlet容器, 恢复处理
+        - `DispatcherServlet`再次被调用, 恢复对`Callable`异步处理所返回结果的处理
+    - DeferredResult异步请求的原理:
+        - 控制器先返回一个`DeferredResult`对象, 并把它存取在内存(队列或列表等)中以便存取
+        - Spring MVC开始进行异步处理
+        - `DispatcherServlet`和所有过滤器都退出Servlet容器线程, 但此时方法的响应对象仍未返回
+        - 由处理该请求的线程对`DeferredResult`进行设值, 然后Spring MVC会重新把请求分派回Servlet容器, 恢复处理
+        - `DispatcherServlet`再次被调用, 恢复对该异步返回结果的处理
+
+
+```java
+// Callable方式
+@RequestMapping(method=RequestMethod.POST)
+public Callable<String> processUpload(final MultipartFile file) {
+    // 返回一个Callable
+    return new Callable<String>() {
+        public String call() throws Exception {
+            // ...
+            return "someView";
+        }
+    };
+}
+
+// DeferredResult方式
+@RequestMapping("/quotes")
+@ResponseBody
+public DeferredResult<String> quotes() {
+    DeferredResult<String> deferredResult = new DeferredResult<String>();
+    // Save the deferredResult somewhere..
+    return deferredResult;
+}
+
+// In some other thread...
+deferredResult.setResult(data);
+```
 
 ## 定义视图
 
