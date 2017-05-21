@@ -670,6 +670,29 @@ public DeferredResult<String> quotes() {
 deferredResult.setResult(data);
 ```
 
+### HTTP流(streaming)
+
+* 用于在一个HTTP响应中推送多个事件
+* 在方法中返回`ResponseBodyEmitter`对象可以发送多个对象
+* `ResponseBodyEmitter`可以放到`ResponseEntity`中, 从而可以自定义响应状态和响应头
+
+```java
+@RequestMapping("/events")
+public ResponseBodyEmitter handle() {
+    ResponseBodyEmitter emitter = new ResponseBodyEmitter();
+    // Save the emitter somewhere..
+    return emitter;
+}
+
+// In some other thread
+emitter.send("Hello once");
+
+// and again later on
+emitter.send("Hello again");
+
+// and done at some point
+emitter.complete();
+```
 
 
 ## 定义视图
