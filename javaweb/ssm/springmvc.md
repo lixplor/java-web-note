@@ -634,6 +634,14 @@ public void displayHeaderInfo(@CookieValue("JSESSIONID") String cookie) {
         - `DispatcherServlet`和所有过滤器都退出Servlet容器线程, 但此时方法的响应对象仍未返回
         - 由处理该请求的线程对`DeferredResult`进行设值, 然后Spring MVC会重新把请求分派回Servlet容器, 恢复处理
         - `DispatcherServlet`再次被调用, 恢复对该异步返回结果的处理
+* 异步请求中的异常处理
+    - 当`Callable`中发生异常时, SpringMVC会返回一个`Exception`对象来替代正常的返回值, 然后容器恢复对此异步请求异常的处理
+    - 当`DeferredResult`中发生异常时, 可以调用`Exception`实例的`setResult()`方法或是`setErrorResult()`方法
+* 拦截异步请求
+    - `HandlerInterceptor`可以实现`AsyncHandlerInterceptor`接口拦截异步请求. 当异步请求开始时, 会调用`afterConcurrentHandlingStarted()`方法, 而不是`postHandle()`或`afterCompletion()`方法
+    - 如需更深入集成, 例如处理timeout事件, 则`HandlerInterceptor`需要注册一个`CallableProcessingInterceptor`或`DeferredResultProcessingInterceptor`拦截器
+    - `DeferredResult`提供了`onTimeout(Runnable)`和`onCompletion(Runnable)`等方法
+    - `Callable`对于请求超时和完成后的事件拦截, 可以将其封装在一个`WebAsyncTask`中
 
 
 ```java
@@ -661,6 +669,8 @@ public DeferredResult<String> quotes() {
 // In some other thread...
 deferredResult.setResult(data);
 ```
+
+
 
 ## 定义视图
 
