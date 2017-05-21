@@ -670,13 +670,50 @@ public DeferredResult<String> quotes() {
 deferredResult.setResult(data);
 ```
 
+* 异步请求的配置
+    - 异步请求依赖于Servlet 3.0. 确保`web.xml`的版本在3.0或以上
+    - 异步请求必须在`web.xml`中将`DispatcherServlet`下的子元素`<async-supported>true</async-supported>`设置为`true`
+    - 所有参与异步请求处理的Filter必须配置为支持`ASYNC`类型的请求分发
+
+```xml
+web.xml
+-------
+<web-app xmlns="http://java.sun.com/xml/ns/javaee"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+            http://java.sun.com/xml/ns/javaee
+            http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+    version="3.0">
+
+    <filter>
+        <filter-name>Spring OpenEntityManagerInViewFilter</filter-name>
+        <filter-class>org.springframework.~.OpenEntityManagerInViewFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
+
+    <filter-mapping>
+        <filter-name>Spring OpenEntityManagerInViewFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+        <dispatcher>REQUEST</dispatcher>
+        <dispatcher>ASYNC</dispatcher>
+    </filter-mapping>
+
+</web-app>
+```
+
+
 ### HTTP流(streaming)
 
 * 用于在一个HTTP响应中推送多个事件
 * 在方法中返回`ResponseBodyEmitter`对象可以发送多个对象
-* `ResponseBodyEmitter`可以放到`ResponseEntity`中, 从而可以自定义响应状态和响应头
+    - `ResponseBodyEmitter`可以放到`ResponseEntity`中, 从而可以自定义响应状态和响应头
+* 在方法中返回一个`SseEmitter`对象, 可以实现服务端事件推送.
+    - 它是`ResponseBodyEmitter`的子类, 提供了对`服务器端事件`的支持
+    - IE不支持该技术
+* 在方法中返回一个`StreamingResponseBody`来直接返回OutputStream流
 
 ```java
+// ResponseBodyEmitter
 @RequestMapping("/events")
 public ResponseBodyEmitter handle() {
     ResponseBodyEmitter emitter = new ResponseBodyEmitter();
@@ -692,7 +729,21 @@ emitter.send("Hello again");
 
 // and done at some point
 emitter.complete();
+
+
+// StreamimgResponseBody
+@RequestMapping("/download")
+public StreamingResponseBody handle() {
+    return new StreamingResponseBody() {
+        @Override
+        public void writeTo(OutputStream outputStream) throws IOException {
+            // write...
+        }
+    };
+}
 ```
+
+
 
 
 ## 定义视图
