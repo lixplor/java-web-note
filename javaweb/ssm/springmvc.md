@@ -744,9 +744,21 @@ public StreamingResponseBody handle() {
 ```
 
 
+### 处理器映射(handler mapping)
+
+* 在旧版本的SpringMVC中, 需要定义多个`HandlerMapping`的bean来将请求映射到控制器方法上.
+* 在新版本的SpringMVC中已经有了注解, 不再需要定义这些bean
+
+### 处理器拦截器(HandlerInterceptor)
+
+* 拦截器可用于对特殊功能进行操作, 如验证用户身份
+* 配置拦截器, 需要实现`HandlerInterceptor`接口, 或继承`HandlerInterceptorAdapter`类, 重写3个方法:
+    - `boolean preHandler()`: 在处理器执行前被执行. 返回值决定是否继续执行处理链中的部件, 返回`true`则处理器链会继续执行; 返回`false`则`DispatcherServlet`认为拦截器自身已经完成了请求的处理, 其余拦截器及处理链都不会再执行
+    - `postHandle()`: 在处理器执行后被执行
+    - `afterCompletion()`: 在整个请求处理完成后被执行
 
 
-## 定义视图
+## 视图解析
 
 * Spring MVC支持多种视图:
     - JSP
@@ -760,6 +772,21 @@ public StreamingResponseBody handle() {
     - Atom
     - RSS源
     - JasperReports
+* 处理视图的2个重要接口
+    - `ViewResolver`: 视图解析器. 负责处理视图名与实际视图之间的映射关系
+    - `View`: 视图. 负责准备请求, 并将请求的渲染交给某种具体的视图技术实现
+
+### ViewResolver解析视图
+
+* 常见视图解析器
+    - `AbstractCachingViewResolver`: 一个抽象的视图解析器类, 提供了缓存视图的功能. 通常视图在能够被使用之前需要经过准备. 继承这个基类的视图解析器即可以获得缓存视图的能力
+    - `XmlViewResolver`: 视图解析器接口`ViewResolver`的一个实现, 该类接受一个XML格式的配置文件. 该XML文件必须与Spring XML的bean工厂有相同的DTD。默认的配置文件名是`/WEB-INF/views.xml`
+    - `ResourceBundleViewResolver`: 视图解析器接口`ViewResolver`的一个实现, 采用bundle根路径所指定的`ResourceBundle`中的bean定义作为配置. 一般bundle都定义在classpath路径下的一个配置文件中. 默认的配置文件名为`views.properties`
+    - `UrlBasedViewResolver`: `ViewResolver`接口的一个简单实现. 它直接使用URL来解析到逻辑视图名, 除此之外不需要其他任何显式的映射声明. 如果你的逻辑视图名与你真正的视图资源名是直接对应的, 那么这种直接解析的方式就很方便, 不需要你再指定额外的映射
+    - `InternalResourceViewResolver`: `UrlBasedViewResolver`的一个好用的子类. 它支持内部资源视图(具体来说, Servlet和JSP), 以及诸如`JstlView`和`TilesView`等类的子类. 可以使用`setViewClass(..)`为所有视图设置视图的类. 更多的细节, 请见UrlBasedViewResolver类的java文档
+    - `VelocityViewResolver / FreeMarkerViewResolver`: `UrlBasedViewResolver`下的实用子类, 支持`Velocity`视图`VelocityView`(Velocity模板)和FreeMarker视图`FreeMarkerView`以及它们对应子类
+    - `ContentNegotiatingViewResolver`: 视图解析器接口`ViewResolver`的一个实现, 它会根据所请求的文件名或请求的`Accept`头来解析一个视图
+
 
 
 ```html
