@@ -787,30 +787,92 @@ public StreamingResponseBody handle() {
     - `VelocityViewResolver / FreeMarkerViewResolver`: `UrlBasedViewResolver`下的实用子类, 支持`Velocity`视图`VelocityView`(Velocity模板)和FreeMarker视图`FreeMarkerView`以及它们对应子类
     - `ContentNegotiatingViewResolver`: 视图解析器接口`ViewResolver`的一个实现, 它会根据所请求的文件名或请求的`Accept`头来解析一个视图
 
+### 视图链
+
+* Spring支持同时使用多个视图解析器, 因此可以配置一个解析器链
+* 可以通过在`applicationContext.xml`中配置各种视图解析器即可, 通过`order`属性确定次序, order值越大, 在视图链的位置就越靠后
+* 如果视图解析器不能返回一个视图, 则Spring会继续检查context中其他视图解析器. 如果所有视图解析器都不能返回一个视图, 则会抛出一个`ServletException`
+
+```xml
+applicationContext.xml
+----------------------
+<bean id="jspViewResolver" class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+    <property name="viewClass" value="org.springframework.web.servlet.view.JstlView"/>
+    <property name="prefix" value="/WEB-INF/jsp/"/>
+    <property name="suffix" value=".jsp"/>
+</bean>
+
+<bean id="excelViewResolver" class="org.springframework.web.servlet.view.XmlViewResolver">
+    <property name="order" value="1"/>
+    <property name="location" value="/WEB-INF/views.xml"/>
+</bean>
 
 
-```html
-/WebContent/WEB-INF/hello/hello.jsp
------------------------------------
-<html>
-    <head>
-        <title>Hello Spring MVC</title>
-    </head>
-    <body>
-        <!-- 这是从服务方法中向model添加的属性中获取到的, 因为模型传递到了视图 -->
-        <h2>${message}</h2>
-    </body>
-</html>
+views.xml
+---------
+<beans>
+    <bean name="report" class="org.springframework.example.ReportExcelView"/>
+</beans>
 ```
 
+### 视图重定向和转发
 
-## ModelAndView
+* 应用场景: 有时, 我们想要在视图渲染之前, 先把一个HTTP重定向请求发送回客户端. 比如, 当一个控制器成功地接受到了POST过来的数据, 而响应仅仅是委托另一个控制器来处理(比如一次成功的表单提交)时, 我们希望发生一次重定向. 在这种场景下, 如果只是简单地使用内部转发, 那么意味着下一个控制器也能看到这次POST请求携带的数据, 这可能导致一些潜在的问题, 比如可能会与其他期望的数据混淆等. 此外, 另一种在渲染视图前对请求进行重定向的需求是, 防止用户多次提交表单的数据. 此时若使用重定向, 则浏览器会先发送第一个POST请求; 请求被处理后浏览器会收到一个重定向响应, 然后浏览器直接被重定向到一个不同的URL, 最后浏览器会使用重定向响应中携带的URL发起一次GET请求. 因此, 从浏览器的角度看, 当前所见的页面并不是POST请求的结果, 而是一次GET请求的结果. 这就防止了用户因刷新等原因意外地提交了多次同样的数据. 此时刷新会重新GET一次结果页, 而不是把同样的POST数据再发送一遍
+* 重定向的方式:
+    - 返回`RedirectView`. 在控制器中创建并返回一个`RedirectView`实例. 这会使`DispatcherServlet`放弃使用一般的视图解析机制. 紧接着`RedirectView`会调用`HttpServletResponse.sendRedirect()`方法发送一个HTTP重定向响应给客户端浏览器
+    - 返回`redirect:`前缀. 如`redirect:{视图名}`
+    - 返回`forward:`前缀. 如`forward:{视图名}`
 
-* 代表了渲染视图所使用的Model和View, 通过ModelAndView对象来封装数据
-* 构造方法:
-    - `ModelAndView(String viewName)`: 返回视图名称
-    - `ModelAndView(String viewName, Map model)`: 返回视图名称, 并使用Map携带Model数据
-    - `ModelAndView(String viewName, String modelName, Object modelObject)`: 返回单个model时使用, 例如API, 并不需要返回视图
+
+
+## FlashAttribute
+
+* 用于通过一个请求为另一个请求存储有用的属性
+* 使用场景: 在重定向的时候最常使用, 比如常见的 `POST/REDIRECT/GET` 模式. Flash属性会在重定向前被暂时地保存起来(通常是保存在session中), 重定向后会重新被下一个请求取用并立即从原保存地移除
+* 2个操作Flash属性的类
+    - `FlashMap`: 存储flash属性
+    - `FlashMapManager`: 存储, 取回, 管理`FlashMap`实例
+* 对Flash属性的支持默认是启用的. 控制器通常不需要直接使用`FlashMap`, 一般通过`@RequestMapping`接收一个`RedirectAttribute`类型的参数, 然后向其中添加flash属性
+* 在并发情况下, `RedirectView`会自动为一个`FlashMap`实例记录其目标重定向URL的路径和查询参数, 来匹配信息, 减少并发问题
+* 一般只在重定向的场景下推荐使用flash属性
+
+
+## URI构造
+
+* `UriComponentsBuilder`: 提供构造URI的机制
+* `UriComponents`: 提供加密URI的机制
+    - 是一个不可变对象, `expand()`和`encode()`操作都会返回一个新的实例
+* `ServletUriComponentsBuilder`: 提供静态的工厂方法, 从Servlet请求中获取URL信息
+
+```java
+// 通过URI模板字符串来填充并加密一个URI
+UriComponents uriComponents = UriComponentsBuilder.fromUriString(
+        "http://example.com/hotels/{hotel}/bookings/{booking}").build();
+
+URI uri = uriComponents.expand("42", "21").encode().toUri();
+
+// 通过URI组件创建并加密一个URI
+UriComponents uriComponents = UriComponentsBuilder.newInstance()
+        .scheme("http").host("example.com").path("/hotels/{hotel}/bookings/{booking}").build()
+        .expand("42", "21")
+        .encode();
+
+// ServletUriComponentsBuilder
+ServletUriComponentsBuilder ucb = ServletUriComponentsBuilder.fromRequest(request)
+        .replaceQueryParam("accountId", "{id}").build()
+        .expand("123")
+        .encode();
+
+ServletUriComponentsBuilder ucb = ServletUriComponentsBuilder.fromServletMapping(request)
+                    .path("/accounts").build()
+```
+
+### 为控制器和方法指定URI
+
+@todo
+
+
+
 
 
 ## 异常处理
