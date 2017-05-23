@@ -869,9 +869,61 @@ ServletUriComponentsBuilder ucb = ServletUriComponentsBuilder.fromServletMapping
 
 ### 为控制器和方法指定URI
 
-@todo
+* `MvcUriComponentsBuilder`
+    - `fromMethodName()`
+    - `fromMethodCall()`
+
+```java
+@Controller
+@RequestMapping("/hotels/{hotel}")
+public class BookingController {
+    @RequestMapping("/bookings/{booking}")
+    public String getBooking(@PathVariable Long booking) {
+    // ...
+    }
+}
 
 
+UriComponents uriComponents = MvcUriComponentsBuilder
+    .fromMethodName(BookingController.class, "getBooking", 21).buildAndExpand(42);
+URI uri = uriComponents.encode().toUri();
+
+
+UriComponents uriComponents = MvcUriComponentsBuilder
+    .fromMethodCall(on(BookingController.class).getBooking(21)).buildAndExpand(42);
+URI uri = uriComponents.encode().toUri();
+```
+
+## 用于国际化的地区信息(Locales)
+
+* 地区信息相关的解析器
+    - `LocaleResolver`: 提供对用户地区信息的消息解析能力.
+        - 当请求被处理时, `DispatcherServlet`会寻找一个地区解析器. 如果找到了, 就会使用它来设置地区相关信息
+    - `LocaleContextResolver`接口: 除了能获取到LocaleResolver的信息, 还能获取到时区信息
+    - `AcceptHeaderLocaleResolver`: 获取`accept-language`请求头
+    - `CookieLocaleResolver`: 获取cookie中的`Locale`或`TimeZone`信息
+        - xml中支持的属性:
+            - `cookieName`: 默认值`classname+LOCALE`. cookie名
+            - `cookieMaxAge`: 默认值`Integer.MAX_INT`. cookie在客户端保存的最长时间, 如果为-1, 则cookie在浏览器关闭后就失效
+            - `cookiePath`: 默认值`/`. 限制了cookie仅对站点下的某些特定路径可见. 如果制定了cookiePath, namecookie将仅对该路径及其自路径下的所有站点可见
+    - `SessionLocaleResolver`: 从session中获取用户请求的`Locale`和`TimeZone`
+        - 与外部session管理机制没有关系. 仅能简单的从当前请求`HttpServletRequest`相关的`HttpSession`对象中, 获取对应属性
+* 获取请求中的地区信息
+    - `RequestContext.getLocale()`: 获取LocaleResolver能解析到的地区信息
+    - `RequestContext.getTimeZone()`: 获取时区.
+        - 时区信息是被Spring的`ConversionService`下注册的日期/时间转换器`Converter`和格式化对象`Formatter`所使用的
+* 地区信息相关的拦截器  
+    - `LocaleChangeInterceptor`: 地区变更拦截器. 检测请求参数中的地区变化
+  
+```xml
+CookieLocaleResolver配置
+-----------------------
+<bean id="localeResolver" class="org.springframework.web.servlet.i18n.CookieLocaleResolver">
+    <property name="cookieName" value="clientlanguage"/>
+    <!-- 单位为秒。若设置为-1，则cookie不会被持久化（客户端关闭浏览器后即被删除） -->
+    <property name="cookieMaxAge" value="100000">
+</bean>
+```
 
 
 
