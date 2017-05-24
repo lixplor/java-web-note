@@ -914,7 +914,7 @@ URI uri = uriComponents.encode().toUri();
         - 时区信息是被Spring的`ConversionService`下注册的日期/时间转换器`Converter`和格式化对象`Formatter`所使用的
 * 地区信息相关的拦截器  
     - `LocaleChangeInterceptor`: 地区变更拦截器. 检测请求参数中的地区变化
-  
+
 ```xml
 CookieLocaleResolver配置
 -----------------------
@@ -924,6 +924,49 @@ CookieLocaleResolver配置
     <property name="cookieMaxAge" value="100000">
 </bean>
 ```
+
+
+## 主题(theme)
+
+* theme用于为整站应用皮肤或主题, theme是一些列的静态资源的集合, 主要是样式表和图片
+* 自定义`ThemeResource`, 或配置`ResourceBundleThemeSource`的基本名前缀(base name prefix), 可以在`applicationContext.xml`中注册一个名字为`themeSource`的bean, 会自动检测并使用它
+    - 默认情况下基本名前缀是空值, 即从根classpath路径加载, 如`/WEB-INF/classes`
+* `org.springframework.ui.context.support.ResourceBundleThemeSource`是处理主题的默认实现, 它会从`classpath`的根路径下去加载配置文件
+    - 主题处理逻辑: 应用主题需要实现`org.springframework.ui.context.ThemeSource`接口. `WebApplicationContext`接口继承了`ThemeSource`接口
+    - `ResourceBundleThemeSource`方式配置主题:
+        - 在配置文件`xxx.properties`中定义属性的键值对
+        - 在JSP中, 可以使用`<spring:theme code="background" />`标签来定义
+* `themeResolver`是默认的主题解析器. `DispatcherServlet`会自动查找这个名称的bean来确定`ThemeResolver`的实现
+    - 一些`ThemeResolver`接口的实现
+        - `FixedThemeResolver`: 选择一个固定的主题, 这时通过设置`defaultThemeName`属性实现的
+        - `SessionThemeResolver`: 请求相关的主题保存在用户的HTTP session. 对于每个session来说, 只需要被设置一次, 但不能在session之间保存
+        - `CookieThemeResolver`: 选中的主题被保存在客户端的cookie中
+* `ThemeChangeInterceptor`: 主题变更拦截器
+
+
+### 示例
+
+* 定义主题属性
+
+```html
+<!-- 配置文件 -->
+styleSheet=/themes/cool/style.css
+background=/themes/cool/img/coolBg.jpg
+
+<!-- JSP中使用spring:theme标签 -->
+<%@ taglib prefix="spring" uri="http://www.springframework.org/tags"%>
+<html>
+    <head>
+        <link rel="stylesheet" href="<spring:theme code=''styleSheet''/>" type="text/css"/>
+    </head>
+    <body style="background=<spring:theme code=''background''/>">
+        ...
+    </body>
+</html>
+```
+
+
+
 
 
 
