@@ -965,64 +965,82 @@ background=/themes/cool/img/coolBg.jpg
 </html>
 ```
 
+## 文件上传
 
-
-
-
-
-## 异常处理
-
-* 处理局部异常
-    - `@ExceptionHandler`注解
-* 处理全局异常
-    - 使用现有异常处理器: `SimpleMappingExceptionResolver`
-    - 使用自定义全局异常处理器: 定义类实现`HandlerExceptionResolver`接口, 重写`public ModelAndView resolveException(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex)`方法
-* 异常处理方式: dao, service, controller的所有异常都往上抛, 最终由全局异常处理器处理
-
-```java
-// 自定义异常
-public class CustomException extends Exception {
-
-    //异常信息
-    public String message;
-
-    public CustomException(String message) {
-        super(message);
-        this.message = message;
-    }
-
-    public String getMessage() {
-        return message;
-    }
-
-    public void setMessage(String message) {
-        this.message = message;
-    }
-
-}
-```
+* Spring内置支持`multipart`上传
+    - 默认是关闭的. 如需开启, 需要在`applicationContext.xml`中注册一个`MultipartResolver`
+* 配置第三方文件上传库`commons-fileupload`
+    - 添加依赖
+    - 注册解析器
+    - 使用`MultipartHttpServletRequest`对象获取文件
+* Servlet 3.0开启文件上传
+    - 在`web.xml`中的`DispatcherServlet`配置中添加`multipart-config`标签, 然后注册`StandardServletMultipartResolver`解析器到`applicationContext.xml`
 
 ```xml
-xxx-servlet.xml
----------------
-<!-- springmvc提供的简单异常处理器 -->
-<bean class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
-     <!-- 定义默认的异常处理页面 -->
-    <property name="defaultErrorView" value="/WEB-INF/jsp/error.jsp"/>
-    <!-- 定义异常处理页面用来获取异常信息的变量名，也可不定义，默认名为exception -->
-    <property name="exceptionAttribute" value="ex"/>
-    <!-- 定义需要特殊处理的异常，这是重要点 -->
-    <property name="exceptionMappings">
-        <props>
-            <prop key="ssm.exception.CustomException">/WEB-INF/jsp/custom_error.jsp</prop>
-        </props>
-        <!-- 还可以定义其他的自定义异常 -->
-    </property>
+applicationContext.xml中注册解析器
+--------------------------------
+<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+    <!-- 支持的其中一个属性，支持的最大文件大小，以字节为单位 -->
+    <property name="maxUploadSize" value="100000"/>
+</bean>
+
+
+<!-- Servlet 3.0 注册的解析器 -->
+<bean id="multipartResolver" class="org.springframework.web.multipart.support.StandardServletMultipartResolver">
 </bean>
 ```
 
+### 使用内置支持处理表单上传
 
-## SpringMVC实现上传文件
+* 接收浏览器发送的`enctype="multipart/form-data"`表单上传文件
+
+```html
+<html>
+    <head>
+        <title>Upload a file please</title>
+    </head>
+    <body>
+        <h1>Please upload a file</h1>
+        <form method="post" action="/form" enctype="multipart/form-data">
+            <input type="text" name="name"/>
+            <input type="file" name="file"/>
+            <input type="submit"/>
+        </form>
+    </body>
+</html>
+```
+
+* 创建控制器
+    - 控制器方法参数可以使用`MultipartHttpServletRequest`或`MultipartFile`来获取文件
+    - Servlet 3.0中, 参数使用`javax.servlet.http.Part`类型
+
+```java
+@Controller
+public class FileUploadController {
+    @RequestMapping(path = "/form", method = RequestMethod.POST)
+    public String handleFormUpload(@RequestParam("name") String name, @RequestParam("file") MultipartFile file) {
+        if (!file.isEmpty()) {
+            byte[] bytes = file.getBytes();
+            // store the bytes somewhere
+            return "redirect:uploadSuccess";
+        }
+        return "redirect:uploadFailure";
+    }
+}
+```
+
+### 使用内置支持处理客户端文件上传
+
+* 使用`@RequestPart`注解来获取`meta-data`
+
+```java
+@RequestMapping(path = "/someUrl", method = RequestMethod.POST)
+public String onSubmit(@RequestPart("meta-data") MetaData metadata, @RequestPart("file-data") MultipartFile file) {
+    // ...
+}
+```
+
+### 使用Commons FileUpload处理文件上传
 
 * 步骤
     - 添加`commons-fileupload`依赖
@@ -1090,5 +1108,141 @@ public class FileUploadController {
         // todo 读写流
 		return "upload-success";
 	}
+}
+```
+
+
+## 异常处理
+
+* 异常处理方式: dao, service, controller的所有异常都往上抛, 最终由全局异常处理器处理
+
+### 处理局部异常
+
+* 在控制器中定义一个处理异常的方法, 并使用`@ExceptionHandler(异常类.class)`注解该方法, 如果控制器方法抛出异常, 则会进入该异常处理方法中进行处理
+
+```java
+@Controller
+public class SimpleController {
+
+    // @RequestMapping methods omitted ...
+
+    @ExceptionHandler(IOException.class)
+    public ResponseEntity<String> handleIOException(IOException ex) {
+        // prepare responseEntity
+        return responseEntity;
+    }
+}
+```
+
+### 处理全局异常
+
+* 2种方式
+    - 使用现有异常处理器:
+        - `SimpleMappingExceptionResolver`: 将异常映射到一个表示错误的视图
+        - `DefaultHandlerExceptionResolver`: 可以将异常转换为状态码
+            - `BindException`: 400, 请求无效
+            - `ConversionNotSupportedException`: 500, 服务器内部错误
+            - `HttpMediaTypeNotAcceptableException`: 406, 不接受
+            - `HttpMediaTypeNotSupportedException`: 415, 不支持的媒体类型
+            - `HttpMessageNotReadableException`: 400, 请求无效
+            - `HttpMessageNotWritableException`: 500, 服务器内部错误
+            - `HttpRequestMethodNotSupportedException`: 405, 不支持的方法
+            - `MethodArgumentNotValidException`: 400, 无效请求
+            - `MissingServletRequestParameterException`: 400, 无效请求
+            - `MissingServletRequestPartException`: 400, 无效请求
+            - `NoHandlerFoundException`: 404, 请求资源未找到
+            - `NoSuchRequestHandlingMethodException`: 404, 请求资源未找到
+            - `TypeMismatchException`: 400, 请求无效
+            - `MissingPathVariableException`: 500, 服务器内部错误
+            - `NoHandlerFoundException`: 404, 请求未找到
+    - 使用自定义全局异常处理器:
+        - 定义类实现`HandlerExceptionResolver`接口, 重写`public ModelAndView resolveException(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex)`方法
+
+
+### 自定义异常
+
+```java
+// 自定义异常
+public class CustomException extends Exception {
+
+    //异常信息
+    public String message;
+
+    public CustomException(String message) {
+        super(message);
+        this.message = message;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+}
+```
+
+```xml
+xxx-servlet.xml
+---------------
+<!-- springmvc提供的简单异常处理器 -->
+<bean class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+     <!-- 定义默认的异常处理页面 -->
+    <property name="defaultErrorView" value="/WEB-INF/jsp/error.jsp"/>
+    <!-- 定义异常处理页面用来获取异常信息的变量名，也可不定义，默认名为exception -->
+    <property name="exceptionAttribute" value="ex"/>
+    <!-- 定义需要特殊处理的异常，这是重要点 -->
+    <property name="exceptionMappings">
+        <props>
+            <prop key="ssm.exception.CustomException">/WEB-INF/jsp/custom_error.jsp</prop>
+        </props>
+        <!-- 还可以定义其他的自定义异常 -->
+    </property>
+</bean>
+```
+
+
+### 自定义错误页面
+
+* 在`web.xml`中定义一个错误页面`<error-page>`
+    - Servlet 3.0以前, 错误元素必须显示指定映射到一个具体的错误码或异常类型
+    - Servlet 3.0起, 不需要再映射
+
+```xml
+web.xml
+-------
+<error-page>
+    <location>/error</location>
+</error-page>
+```
+
+* 通过控制器定义错误页面
+
+```java
+@Controller
+public class ErrorController {
+
+    @RequestMapping(path = "/error", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    @ResponseBody
+    public Map<String, Object> handle(HttpServletRequest request) {
+
+        Map<String, Object> map = new HashMap<String, Object>();
+        map.put("status", request.getAttribute("javax.servlet.error.status_code"));
+        map.put("reason", request.getAttribute("javax.servlet.error.message"));
+
+        return map;
+    }
+}
+```
+
+* 使用JSP
+
+```html
+<%@ page contentType="application/json" pageEncoding="UTF-8"%>
+{
+    status:<%=request.getAttribute("javax.servlet.error.status_code") %>,
+    reason:<%=request.getAttribute("javax.servlet.error.message") %>
 }
 ```
