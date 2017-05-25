@@ -1246,3 +1246,43 @@ public class ErrorController {
     reason:<%=request.getAttribute("javax.servlet.error.message") %>
 }
 ```
+
+
+## HTTP缓存支持
+
+* 缓存相关的HTTP响应头
+    - `Cache-Control`: 控制浏览器的缓存策略
+        - `Cache-Control:max-age={秒}`, 设置缓存截止时间, 客户端在这个时间之前不会去重新请求资源
+    - `Expires`: 响应如果在Expires的时间之后到达, 则认为是响应过期
+        - 可以和`Last-Modified`结合使用, 控制请求文件的有效时间
+    - `Last-Modified`: 请求资源在服务器端最后的被修改时间
+        - 浏览器没有缓存或缓存与服务端资源发生变化时, 第一次访问会响应200
+        - 有缓存且缓存与服务端资源没有变化时会响应304
+    - `ETag`: Entity Tag, 实体标签, 用于标记指定URL下的内容有无变化
+        - 如果ETag没有变化, 返回304
+        - 如果ETag发生变化, 返回200
+* Spring中缓存的相关方法
+    - `Cache-Control`相关
+        - `int setCachePeriod(int seconds)`: 设置`Cache-Control`
+            - 惯例
+                - 返回值为`-1`, 则不生成`Cache-Control`响应头
+                - 返回值为`0`, 设置禁用缓存, 即返回`Cache-Control: no-store`
+                - 返回值`n > 0`, 设置缓存时间`n`秒, 即返回`Cache-Control: max-age=n`
+        - `CacheControl`类用于描述`Cache-Control`指令
+
+
+```java
+// CacheControl类
+// 缓存一小时 - "Cache-Control: max-age=3600"
+CacheControl ccCacheOneHour = CacheControl.maxAge(1, TimeUnit.HOURS);
+
+// 禁止缓存 - "Cache-Control: no-store"
+CacheControl ccNoStore = CacheControl.noStore();
+
+// 缓存十天，对所有公共缓存和私有缓存生效
+// 响应不能被公共缓存改变
+// "Cache-Control: max-age=864000, public, no-transform"
+CacheControl ccCustom = CacheControl.maxAge(10, TimeUnit.DAYS)
+                                    .noTransform()
+                                    .cachePublic();
+```
