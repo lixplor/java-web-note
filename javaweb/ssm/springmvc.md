@@ -1286,3 +1286,136 @@ CacheControl ccCustom = CacheControl.maxAge(10, TimeUnit.DAYS)
                                     .noTransform()
                                     .cachePublic();
 ```
+
+### 静态资源的HTTP缓存
+
+* `ResourceHttpRequestHandler`会去读文件的meta-data, 并填充`Last-Modified`头的值
+
+```java
+@Configuration
+@EnableWebMvc
+public class WebConfig extends WebMvcConfigurerAdapter {
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/resources/**")
+                .addResourceLocations("/public-resources/")
+                .setCacheControl(CacheControl.maxAge(1, TimeUnit.HOURS).cachePublic());
+    }
+
+}
+```
+
+* xml
+
+```xml
+<mvc:resources mapping="/resources/**" location="/public-resources/">
+    <mvc:cache-control max-age="3600" cache-public="true"/>
+</mvc:resources>
+```
+
+### 在控制器响应中设置缓存相关的响应头
+
+* `ResponseEntity`
+* `WebRequest`
+    - 检查资源是否发生变化的3种方式
+        - `request.checkNotModified(lastModified)`方法会将传入的参数值(最后修改时间)与请求头`'If-Modified-Since'`的值进行比较
+        - `request.checkNotModified(eTag)`方法会将传入的参数值与请求头`'ETag'`的值进行比较
+        - `request.checkNotModified(eTag, lastModified)`方法会同时进行以上两种比较。也即是说，只有在两个比较都被判定为未修改时，服务器才会返回一个304响应状态码HTTP 304 Not Modified`资源未修改`
+
+```java
+@RequestMapping("/book/{id}")
+public ResponseEntity<Book> showBook(@PathVariable Long id) {
+
+    Book book = findBook(id);
+    String version = book.getVersion();
+
+    return ResponseEntity
+                .ok()
+                .cacheControl(CacheControl.maxAge(30, TimeUnit.DAYS))
+                .eTag(version) // 这里也能操作最后修改时间lastModified，只不过没有一一展示
+                .body(book);
+}
+```
+
+
+### 使用shallow ETag节省带宽
+
+* `ShallowEtagHeaderFilter`过滤器会将渲染的内容缓存起来, 生成一个MD5哈希值, 并将这个值作为ETag值写到响应中. 客户端再次请求相同的资源时, 会将这个ETag值写道`If-None-Match`头中. 过滤器会检测这个请求头, 然后再把视图渲染出来, 比较两个哈希值, 如果比较结果相同, 则服务器返回304. 这样由于只返回响应码, 从而节省了带宽
+
+```xml
+web.xml中配置ShallowEtagHeaderFilter
+-----------------------------------
+<filter>
+    <filter-name>etagFilter</filter-name>
+    <filter-class>org.springframework.web.filter.ShallowEtagHeaderFilter</filter-class>
+</filter>
+
+<filter-mapping>
+    <filter-name>etagFilter</filter-name>
+    <servlet-name>petclinic</servlet-name>
+</filter-mapping>
+```
+
+* 如果在Servlet 3.0以上, 可以直接:
+
+```java
+public class MyWebAppInitializer extends AbstractDispatcherServletInitializer {
+    @Override
+    protected Filter[] getServletFilters() {
+        return new Filter[] { new ShallowEtagHeaderFilter() };
+    }
+}
+```
+
+
+## Servlet 3.0 以上通过代码进行配置
+
+* 在Servlet 3.0以上, 可以通过代码方式进行配置, 免去`web.xml`, 也可以两种方式同时使用
+* `WebApplicationInitializer`接口, 用于注册DispatcherServlet
+* `AbstractDispatcherServletInitializer`抽象类, 重写其方法即可实现DispatcherServlet的配置
+
+```java
+使用代码注册DispatcherServlet
+WebApplicationInitializer
+---------------------------
+import org.springframework.web.WebApplicationInitializer;
+
+public class MyWebApplicationInitializer implements WebApplicationInitializer {
+
+    @Override
+    public void onStartup(ServletContext container) {
+        XmlWebApplicationContext appContext = new XmlWebApplicationContext();
+        appContext.setConfigLocation("/WEB-INF/spring/dispatcher-config.xml");
+
+        ServletRegistration.Dynamic registration = container.addServlet("dispatcher", new DispatcherServlet(appContext));
+        registration.setLoadOnStartup(1);
+        registration.addMapping("/");
+    }
+
+}
+```
+
+```java
+使用代码配置DispatcherServlet
+AbstractDispatcherServletInitializer
+---------------------------
+public class MyWebAppInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
+
+    @Override
+    protected Class<?>[] getRootConfigClasses() {
+        return null;
+    }
+
+    @Override
+    protected Class<?>[] getServletConfigClasses() {
+        return new Class[] { MyWebConfig.class };
+    }
+
+    @Override
+    protected String[] getServletMappings() {
+        return new String[] { "/" };
+    }
+
+}
+```
