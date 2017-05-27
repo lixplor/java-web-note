@@ -22,7 +22,7 @@
 
 * `Subject`: 主体, 代表当前用户, 用户不一定是具体的人, 与当前应用交互的任何东西都是Subject, 如爬虫, 机器人等. 所有操作都委托给SecurityManager
 * `SecurityManager`: 安全管理器, 所有与安全有关的操作都会与SecurityManager. 管理所有Subject, 是Shiro的核心
-* `Realm`: 域, Shiro从Realm获取安全配置信息(如用户, 角色, 权限)
+* `Realm`: 域, Shiro从Realm获取安全配置信息(如用户, 角色, 权限). 这部分由开发者实现
 
 
 ## 集成
@@ -58,3 +58,26 @@
     - 必须唯一
     - 一个主体可以有多个`principals`, 但只能有一个`Primary principals`
 * `credentials`: 证明或凭证, 如密码, 数字证书等
+
+```java
+@Test
+public void testHelloworld() {
+    //1、获取SecurityManager工厂，此处使用Ini配置文件初始化
+    SecurityManager  Factory<SecurityManager> factory = new IniSecurityManagerFactory("classpath:shiro.ini");
+    //2、得到SecurityManager实例 并绑定给SecurityUtils   
+    SecurityManager securityManager = factory.getInstance();
+    SecurityUtils.setSecurityManager(securityManager);
+    //3、得到Subject及创建用户名/密码身份验证Token（即用户身份/凭证）
+    Subject subject = SecurityUtils.getSubject();
+    UsernamePasswordToken token = new UsernamePasswordToken("zhang", "123");
+    try {
+        //4、登录，即身份验证
+        subject.login(token);
+    } catch (AuthenticationException e) {
+        //5、身份验证失败
+    }
+    Assert.assertEquals(true, subject.isAuthenticated()); //断言用户已经登录
+    //6、退出
+    subject.logout();
+}
+```
