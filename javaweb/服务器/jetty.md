@@ -13,6 +13,8 @@
 
 ## IDE集成
 
+* IDEA
+    - 打开设置, 找到`Plugins`, 安装`Jetty Integration`插件, 重启IDEA
 * Eclipse
     - 安装Jetty插件运行环境
         - `Help > Eclipse Marketplace`
@@ -36,7 +38,7 @@
 </plugin>
 ```
 
-* mvn启动jetty: `mvn jetty:run`
+* IDEA: mvn启动jetty, `mvn jetty:run`
 * Eclipse中: `右键 > Run as > Run with Jetty`
 
 
