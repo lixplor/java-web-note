@@ -223,3 +223,21 @@ pom.xml
 ```
 
 * 执行发布命令: `mvn tomcat:7 redeploy`
+
+
+## 常见问题
+
+* 创建`maven-archetype-webapp`项目, 没有`java`目录; 手动创建后也不检测代码, 不显示包结构
+    - 没有目录可以手动创建
+    - 不显示为包结构是因为当前IDE将`java`看做是普通目录, 右键, 选择`Mark Directory as`, 点击`Source Set`即可
+
+* 找不到Tomcat提供的Servlet相关API
+    - 添加依赖
+
+```xml
+<dependency>
+    <groupId>javax.servlet</groupId>
+    <artifactId>javax.servlet-api</artifactId>
+    <version>3.0.1</version>
+</dependency>
+```
