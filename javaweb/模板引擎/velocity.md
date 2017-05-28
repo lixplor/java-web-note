@@ -218,6 +218,35 @@ $timeutils.getCurrentTimestamp()   ## 显示时间戳
 * 对于表单提交的参数, 可以通过velocity提供的`springBind`宏来将表单的参数绑定到变量的属性中, 从而提交表单时, 将该变量作为一个bean提交到控制器
 * velocity默认没有将session域中的对象绑定到视图模型. 如果希望vm模板能够直接访问session域, 可在初始化`VelocityViewResolver`时加入`<property name="exposeSessionAttributes" value="true" />`. 同理也可以开启对request域的绑定
 
+* 在依赖中要增加Spring对模板引擎的支持组件
+
+```xml
+<!-- Spring velocity engine-->
+<dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-context-support</artifactId>
+    <version>${spring}</version>
+</dependency>
+```
+
+* 还要在`dispatcher-servlet.xml`中配置一个`VelocityConfigurer`, 并添加velocity的视图解析器
+
+```xml
+dispatcher-servlet.xml
+----------------------
+<!-- 配置velocity -->
+<bean id="velocityConfigurer" class="org.springframework.web.servlet.view.velocity.VelocityConfigurer">
+    <property name="resourceLoaderPath" value="/WEB-INF/views"/>
+    <property name="configLocation" value="/WEB-INF/configs/velocity.properties"/>
+</bean>
+<!-- 配置Velocity解析器 -->
+<bean class="org.springframework.web.servlet.view.velocity.VelocityViewResolver">
+    <property name="prefix" value="/"/>  <!-- 相对于resourceLoaderPath的路径开始 -->
+    <property name="suffix" value=".vm"/>
+    <property name="contentType" value="text/html;charset=UTF-8"/> <!-- 必须配置, 否则乱码 -->
+</bean>
+```
+
 
 ## VTL语法
 
