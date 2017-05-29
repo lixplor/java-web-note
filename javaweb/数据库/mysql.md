@@ -176,6 +176,12 @@ CREATE DATABASE db_name;
 USE db_name;
 ```
 
+* 查看当前所使用的数据库
+
+```sql
+SELECT DATABASE();
+```
+
 * 删除数据库
 
 ```sql
