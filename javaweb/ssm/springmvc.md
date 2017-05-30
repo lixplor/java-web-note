@@ -116,8 +116,9 @@
 * SpringMVC涉及2个配置文件:
     - `WebContent/WEB-INF/web.xml`, 该配置文件可以:
         - 配置由Spring默认的`DispatcherServlet`来拦截请求
-        - 配置自定义的spring mvc配置文件路径
-    - `{ProjectName}-servlet.xml`:
+            - 注意`<servlet-name>`会影响SpringMVC寻找配置文件, 它会自动去`WEB-INF`下寻找名为`{servlet-name}-servlet.xml`的配置文件
+        - 也可以通过`contextConfigLocation`来自定义的spring mvc配置文件路径
+    - `{servlet-name}-servlet.xml`:
         - `DispatcherServlet`的配置文件, 用于创建定义的bean
         - 路径默认在`WebContent/WEB-INF/`下, 但可以通过`web.xml`自定义
         - 该文件可以:
@@ -1419,3 +1420,9 @@ public class MyWebAppInitializer extends AbstractAnnotationConfigDispatcherServl
 
 }
 ```
+
+
+## 常见问题
+
+* `resources`目录下的资源如何引用?
+    - 在xml配置文件中, 可以使用`classpath:{resources目录下的目录或文件}`来使用
