@@ -48,6 +48,8 @@
     - `NO_LOGGING`
 
 ```xml
+mybatis-config.xml
+------------------
 <configuration>
     <settings>
         ...
@@ -62,7 +64,7 @@
 
 * 配置文件
     - `mybatis-config.xml`: 核心配置文件, 配置运行环境
-    - `mapper.xml`: sql映射, 配置操作数据库的sql语句, 需要在`mybatis-config.xml`中配置
+    - `XxxMapper.xml`: sql映射, 配置操作数据库的sql语句, 对应Java代码中的`XxxMapper.java`, 编写完成后需要在`mybatis-config.xml`中注册
 * `SqlSessionFactory`: 会话工厂, 用于闯进SqlSession
 * `SqlSession`: 会话, 操作数据库通过SqlSession进行
 * `Executor`接口: 执行器, 操作数据库, 有2个实现类
@@ -83,7 +85,7 @@
     2. 从SqlSessionFactory中获取SqlSession
     3. 创建POJO类
     4. 创建SQL映射文件
-        - xml方式: `JavaBean类名.xml`
+        - xml方式: `XxxMapper.xml`
         - 注解方式
 
 ```xml
@@ -94,7 +96,7 @@ mybatis-config.xml
     PUBLIC "-//mybatis.org//DTD Config 3.0//EN"
     "http://mybatis.org/dtd/mybatis-3-config.dtd">
 <configuration>
-    <!-- 参数 -->
+    <!-- 加载外部配置文件的键值对, 用于填充xml中的变量 -->
     <properties resource="com/package/config.properties"/>
 
     <!-- 配置数据库 -->
@@ -199,16 +201,70 @@ public class QueryUser {
 
 ## 配置文件
 
+* 一般使用`mybatis-config.xml`作为配置文件名
+* 配置文件的结构如下:
+
+```
+configuration                     配置
+    properties                    属性
+    settings                      设置
+    typeAliases                   类型命名
+    typeHandlers                  类型处理器
+    objectFactory                 对象工厂
+    plugins                       插件
+    environments                  环境
+        environment               环境变量
+            transactionManager    事务管理器
+            dataSource            数据源
+    databaseIdProvider            数据库厂商标识
+    mappers                       映射器
+```
+
+### `<properties>`属性
+
+* 这种属性是可以通过外部文件配置的, 并且可以动态替换
+* 通常用于引入外部配置文件, 填充xml配置中的占位符(通过`${xxx}`表示)
+* 如果同一个属性在多个地方都配置过, 则加载优先级为:
+    - `作为方法参数传递的属性 > resource/url属性指定的配置文件config.properties > <properties>标签`
+* 属性值占位符的默认值
+    - 3.4.2开始, 可以为占位符`${xxx}`设置一个默认值, 当指定占位符不存在时, 使用默认占位符
+        - 格式: `value="${username:ut_user}"`, 如果`username`属性不存在, 则使用`ut_user`属性的值
+        - 该特性默认是关闭的, 需要通过以下配置开启:
+            - `<property name="org.apache.ibatis.parsing.PropertyParser.enable-default-value" value="true"/>`
+    - 默认值也可以使用三元运算符表示
+        - 格式: `${tableName != null ? tableName : 'global_constants'}`
+
+```xml
+<!-- 配置属性 -->
+<properties resource="org/mybatis/example/config.properties"> <!-- 引用外部配置文件 -->
+  <property name="username" value="dev_user"/>  <!-- 定义了username属性的值 -->
+  <property name="password" value="F2Fa3!33TYyg"/>
+</properties>
+
+<!-- 使用属性 -->
+<dataSource type="POOLED">
+  <property name="driver" value="${driver}"/>
+  <property name="url" value="${url}"/>
+  <property name="username" value="${username}"/> <!-- 通过占位符引用username -->
+  <property name="password" value="${password}"/>
+</dataSource>
+```
+
+### 小结
+
 `mybatis-config.xml`:
 * `<configuration>`
     - `<properties resource="config.properties">`: 用于设置配置文件, 配置文件中定义的键值对可用于xml配置中
         - 加载优先级: `<properties>标签 < config.properties < 方法参数`
         - `<property name="" value=""/>`: 属性键值对
-            - 默认值
-                - 从3.4.2开始, 可以设置默认值: `value=${username:default_user}`
-                - 使用`<property name="org.apache.ibatis.parsing.PropertyParser.enable-default-value" value="true"/>`设置默认值开启和关闭
-    - `<settings>`: 配置mybatis运行行为
-        - `<setting name="" value=""/>`: 配置键值对. 具体属性见官网
+            - 属性值的默认值
+                - 从3.4.2开始, 可以为占位符设置一个默认值:
+                    - `value=${username:default_user}`, 表示如果`username`不存在的话, 则使用`default_user`
+                    - 该特性默认是关闭的, 需要使用`<property name="org.apache.ibatis.parsing.PropertyParser.enable-default-value" value="true"/>`设置默认值开启和关闭
+                - 默认值也可以使用三元运算符来表示
+                    - `value=${username != null? username : default_user}`
+    - `<settings>`: 配置mybatis运行时行为
+        - `<setting name="" value=""/>`: 配置键值对
     - `<typeAliases>`: 类别别名, 为Java类型设置一个别名
         - `<typeAlias name="" value=""/>`: 配置别名
         - `<package name=""/>`: 指定JabaBean所在包名
