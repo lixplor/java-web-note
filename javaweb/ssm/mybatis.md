@@ -324,6 +324,61 @@ configuration                     配置
 |Collection|collection|
 |Iterator|iterator|
 
+### `<typeHandlers>`类型处理器
+
+* 类型处理器用于在为PreparedStatement设置参数和从结果集中取出值时进行Java类型转换
+* 如果使用JSR-310(Date和Time的API), 可以使用`mybatis-typehandlers-jsr310`
+* 自定义处理器:
+    - MaBatis有默认的类型处理器, 如果有特殊的类型需要处理, 也可以自定义类型处理器. 方法如下:
+        - 方式1: 实现`org.apache.ibatis.type.TypeHandler`接口, 重写所有方法
+        - 方式2: 继承`org.apache.ibatis.type.BaseTypeHandler`类, 重写所需方法.
+        - 使用`@MappedJdbcTypes(JdbcType.VARCHAR)`将该自定义处理器映射到一个JDBC类
+        - 在该标签中使用`<typeHandler handler="自定义类型处理器完整类名"/>`
+    - 自定义泛型类型处理器可以处理多种类型, 它需要创建一个接受泛型参数的构造方法
+    - 设置在指定包查找类型处理器: 在该标签内添加`<package name="包名"/>`, 则会在该包内自动查找使用注解方式指定的JDBC类型
+* 以下是默认的类处理器
+
+|类处理器|Java类型|JDBC类型|
+|-------|--------|-------|
+|`BooleanTypeHandler`|`java.lang.Boolean`, `boolean`|数据库兼容的 `BOOLEAN`|
+|`ByteTypeHandler`|`java.lang.Byte`, `byte`|数据库兼容的 `NUMERIC` 或 `BYTE`|
+|`ShortTypeHandler`|`java.lang.Short`, `short`|数据库兼容的 `NUMERIC` 或 `SHORT` INTEGER|
+|`IntegerTypeHandler`|`java.lang.Integer`, `int`|数据库兼容的 `NUMERIC` 或 `INTEGER`|
+|`LongTypeHandler`|`java.lang.Long`, `long`|	数据库兼容的 `NUMERIC` 或 `LONG` INTEGER|
+|`FloatTypeHandler`|`java.lang.Float`, `float`|数据库兼容的 `NUMERIC` 或 `FLOAT`|
+|`DoubleTypeHandler`|`java.lang.Double`, `double`|数据库兼容的 `NUMERIC` 或 `DOUBLE`|
+|`BigDecimalTypeHandler`|`java.math.BigDecimal`|数据库兼容的 `NUMERIC` 或 `DECIMAL`|
+|`StringTypeHandler`|`java.lang.String`|`CHAR`, `VARCHAR`|
+|`ClobReaderTypeHandler`|`java.io.Reader`|-|
+|`ClobTypeHandler`|`java.lang.String`|`CLOB`, `LONGVARCHAR`|
+|`NStringTypeHandler`|`java.lang.String`|`NVARCHAR`, `NCHAR`|
+|`NClobTypeHandler`|`java.lang.String`|`NCLOB`|
+|`BlobInputStreamTypeHandler`|`java.io.InputStream`|-|
+|`ByteArrayTypeHandler`|`byte[]`|数据库兼容的字节流类型|
+|`BlobTypeHandler`|`byte[]`|`BLOB`, `LONGVARBINARY`|
+|`DateTypeHandler`|`java.util.Date`|`TIMESTAMP`|
+|`DateOnlyTypeHandler`|`java.util.Date`|`DATE`|
+|`TimeOnlyTypeHandler`|`java.util.Date`|`TIME`|
+|`SqlTimestampTypeHandler`|`java.sql.Timestamp`|`TIMESTAMP`|
+|`SqlDateTypeHandler`|`java.sql.Date`|`DATE`|
+|`SqlTimeTypeHandler`|`java.sql.Time`|`TIME`|
+|`ObjectTypeHandler`|`Any`|`OTHER` 或未指定类型|
+|`EnumTypeHandler`|`Enumeration Type`|`VARCHAR`-任何兼容的字符串类型, 存储枚举的名称(而不是索引)|
+|`EnumOrdinalTypeHandler`|`Enumeration Type`|任何兼容的 `NUMERIC` 或 `DOUBLE` 类型, 存储枚举的索引(而不是名称). |
+
+```java
+//自定义泛型处理器
+public class GenericTypeHandler<E extends MyObject> extends BaseTypeHandler<E> {
+
+  private Class<E> type;
+
+  public GenericTypeHandler(Class<E> type) {
+    if (type == null) throw new IllegalArgumentException("Type argument cannot be null");
+    this.type = type;
+  }
+}
+```
+
 
 ### 小结
 
