@@ -540,24 +540,25 @@ public class GenericTypeHandler<E extends MyObject> extends BaseTypeHandler<E> {
 解释:
 * 该语句的id是`selectPerson`, 可以通过该id找到该语句
 * 该语句接受一个int或Integer类型的参数
-* 该语句返回一个HashMap类型的对象
+* 该语句返回一个HashMap类型的对象, Map的key是列名, value是记录值
 * 参数使用`#{id}`表示, 它在JDBC中会被`?`来替换
 
 Select标签属性:
 * `id`: 命名空间中的唯一标识, 用于引用该语句
-* `parameterType`: 可选. 传入语句的参数的完整类名或别名
-* `resultType`: 语句返回的结果的完整类名或别名. 如果结果是集合, 则是集合可以包含的类型. 不能与resultMap同时使用
+* `parameterType`: 可选. 传入语句的参数的完整类名或别名. 默认是`unset`, 如果定义该属性也是可以的, 因为MyBatis会使用`TypeHandler`来推断传入的类型
+* ~~`parameterMap`~~: 已过时
+* `resultType`: 语句返回的结果的完整类名或别名. 如果结果是集合, 则应该是集合中包含的元素的类型, 而不是集合的类型. 不能与resultMap同时使用
 * `resultMap`: 外部resultMap的命名引用. 不能与resultType同时使用
 * `flushCache`: 当true时, 调用任何语句都会使本地缓存和二级缓存清空. 默认值false
 * `useCache`: 当true时, 语句的结果被而今缓存. 默认对select标签为true
 * `timeout`: 等待数据库返回请求结果的秒数, 超时会抛出异常
 * `fetchSize`: 设置每次批量返回的结果行数
-* `statementType`: 语句类型
-    - `STATEMENT`: 默认, 使用Statement
-    - `PREPARED`: 使用PreparedStatement
+* `statementType`: SQL语句类型
+    - `STATEMENT`: 使用Statement
+    - `PREPARED`: 默认值, 使用PreparedStatement
     - `CALLABLE`: 使用CallableStatement
-* `resultSetType`: 结果集类型
-    - `FORWARD_ONLY`
+* `resultSetType`: 结果集类型, 默认`unset`
+    - `FORWARD_ONLY`:
     - `SCROLL_SENSITIVE`
     - `SCROLL_INSENSITIVE`
 * `databaseId`: 用于配置了databaseIdProvider时加载不同数据库
@@ -597,16 +598,17 @@ Select标签属性:
 insert, update, delete非常接近
 属性:
 * `id`: 命名空间中的唯一标识
-* `parameterType`: 可选. 传入语句参数的完整类名或别名
+* `parameterType`: 可选. 传入语句参数的完整类名或别名. 如果不定义, MyBatis会通过`TypeHandler`推断传入参数的类型
+* ~~`parameterMap`~~: 已过时
 * `flushCache`: 当true时, 调用任何语句都会使本地缓存和二级缓存清空. 默认值false
 * `timeout`: 等待数据库返回请求结果的秒数, 超时会抛出异常
 * `statementType`: 语句类型
     - `STATEMENT`: 默认, 使用Statement
     - `PREPARED`: 使用PreparedStatement
     - `CALLABLE`: 使用CallableStatement
-* `useGeneratedKeys`: 仅对insert和update有用. 让mybatis使用JDBC的`getGeneratedKeys`方法来取出由数据库内部生成的主键
-* `keyProperty`: 仅对insert和update有用. 唯一标记一个属性.
-* `keyColumn`: 仅对insert和update有用. 通过生成的键值设置表中的列明
+* `useGeneratedKeys`: 仅对insert和update有用. 让mybatis使用JDBC的`getGeneratedKeys`方法来取出由数据库内部生成的主键. 默认值false
+* `keyProperty`: 仅对insert和update有用. 唯一标记一个属性. MyBatis会通过`getGeneratedKeys`方法的返回值或通过insert语句的selectKey子元素设置它的键值. 可以使用`,`分隔多个列明
+* `keyColumn`: 仅对insert和update有用. 通过生成的键值设置表中的列名. 仅在PostgreSQL中必须
 * `databaseId`: 用于配置了databaseIdProvider时加载不同数据库
 
 示例:
@@ -829,9 +831,8 @@ SELECT * FROM BLOG WHERE state = ‘ACTIVE’
 
 ## 映射器注解
 
-* MyBatis3开始, 支持注解配置映射. 但是不如xml强大, 而且java在注解方面也有些限制
+* MyBatis3开始, 支持注解配置映射.
 
-参见[官方文档](http://www.mybatis.org/mybatis-3/zh/java-api.html)
 
 
 ## SQL语句构造器
