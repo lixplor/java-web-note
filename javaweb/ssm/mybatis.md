@@ -379,6 +379,93 @@ public class GenericTypeHandler<E extends MyObject> extends BaseTypeHandler<E> {
 }
 ```
 
+### `<objectFactory>`对象工厂
+
+* MyBatis每次创建结果对象的新实例时, 都会使用一个实例来完成.
+* 默认的对象工厂只是实例化目标类, 通过默认构造方法或带参构造方法.
+* 可以定义类继承`DefaultObjectFactory`来重写其行为, 并在`mybatis-config.xml`中使用`<object type="自定义类">`来使其生效
+
+### `<plugins>`插件
+
+* 插件用于在映射的执行语句执行过程中的某一点进行拦截
+* 允许使用插件拦截的方法包括:
+    - `Executor (update, query, flushStatements, commit, rollback, getTransaction, close, isClosed)`
+    - `ParameterHandler (getParameterObject, setParameters)`
+    - `ResultSetHandler (handleResultSets, handleOutputParameters)`
+    - `StatementHandler (prepare, parameterize, batch, update, query)`
+* 定义类实现`Interceptor`接口, 然后使用注解`@Intercepts(@Signature(type=拦截的方法类.class, method="INSERT|DELETE|UPDATE|SELECT"), args=参数类.class)`, 然后在`mybatis-config.xml`中使用`<plugins>`标签, 在其内部定义`<plugin interceptor="实现类">`
+
+### `<environments>`环境配置
+
+* 可以通过该标签配置用于开发, 测试, 生产等不同的环境, 来连接不同的环境下的数据库
+* 但是每种环境都必须对应一个`SqlSessionFactory`实例, 在创建SqlSessionFactory时可以将环境和参数配置进去
+* `<environments>`标签用于声明环境配置
+    - 内部的`<environment id="">`用于定义一种环境配置, 该环境配置用id来注明, id随意命名, 但不能重复
+        - `<transactionManager type="事务管理器类型">`用于定义该环境下的事务管理器配置
+            - `JDBC`: 直接使用JDBC来管理事务
+            - `MANAGED`: 不提交和回滚, 而让容器来管理事务
+            - **注意**: 如果使用Spring+MyBatis, 则没有必要配置事务管理器, 因为Spring模块会使用自带的事务管理器来覆盖这个配置
+        - `<dataSource type="数据源类型">`用于定义数据源和连接属性
+            - `UNPOOLED`: 不使用数据库连接池. 每次请求都要打开和关闭连接
+                - `driver`属性: 驱动的完整类名
+                - `url`属性: 数据库URL
+                - `username`属性: 数据库用户名
+                - `password`属性: 数据库密码
+                - `defaultTransactionIsolationLevel`属性: 默认连接事务隔离级别
+            - `POOLED`: 使用数据库连接池
+                - `driver`属性: 驱动的完整类名
+                - `url`属性: 数据库URL
+                - `username`属性: 数据库用户名
+                - `password`属性: 数据库密码
+                - `defaultTransactionIsolationLevel`属性: 默认连接事务隔离级别
+                - `poolMaximumActiveConnetions`: 连接池最大活动连接数, 默认10
+                - `poolMaximumIdleConnections`: 连接池最大空闲连接数
+                - `poolMaximumCheckoutTime`: 连接池最大被检出事件, 默认20000毫秒
+                - `poolTimeToWait`: 连接超时时间, 默认20000毫秒
+                - `poolPingQuery`: 在查询时Ping数据库检测连接是否正常, 默认是`NO PING QUERY SET`
+                - `poolPingEnabled`: 是否启用Ping检测, 默认`false`
+                - `poolPingConnectionsNotUsedFor`: 配置`poolPingQuery`的使用品读, 默认0
+            - `JNDI`: 适合EJB等有JNDI上下文引用的容器
+                - `initial_context`: InitialContext的上下文路径
+                - `data_source`: 数据源实例的上下文路径
+
+```xml
+<environments default="development">
+  <environment id="development">
+    <transactionManager type="JDBC">
+      <property name="..." value="..."/>
+    </transactionManager>
+    <dataSource type="POOLED">
+      <property name="driver" value="${driver}"/>
+      <property name="url" value="${url}"/>
+      <property name="username" value="${username}"/>
+      <property name="password" value="${password}"/>
+    </dataSource>
+  </environment>
+</environments>
+```
+
+### `<databaseIdProvider>`数据库厂商标识
+
+* 用于为不同数据库厂商执行不同的SQL语句
+
+```xml
+<databaseIdProvider type="DB_VENDOR">
+  <property name="SQL Server" value="sqlserver"/>
+  <property name="DB2" value="db2"/>        
+  <property name="Oracle" value="oracle" />
+</databaseIdProvider>
+```
+
+### `<mappers>`映射器
+
+* 用来告诉MyBatis在哪里寻找定义的`XxxMapper.xml`
+* `<mappers>`用于声明映射器配置
+    - `<mapper>`用于定义一个映射路径
+        - `resource`属性用于从包名下寻找XML映射文件
+        - `url`属性用于从`file://`路径下寻找映射文件
+        - `class`属性用于从包名下寻找Java映射类
+    - `<package name="包名"/>`用于在指定的包下寻找所有类型的映射文件, 省去一个一个配置的步骤
 
 ### 小结
 
