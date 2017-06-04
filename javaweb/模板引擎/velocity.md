@@ -352,11 +352,14 @@ My name is $name. Nice to see you!    ## 输出My name is Tom. Nice to see you!
 #end
 ```
 
-* 循环: `#foreach($var in $list)...#end`
-    - 迭代过程中, 可以使用整型内置变量`velocityCount`获取迭代次数, 值默认从`1`开始, 可以在配置文件中修改.
-        - 通过该值可以实现表格不同行的颜色区分
-    - 可以使用布尔类型内置变量`velocityHasNext`来判断是否还有下一个元素
-        - 可用于判断迭代是否完成
+* 循环:
+    - `#foreach($var in $list)...#end`
+        - 迭代过程中, 可以使用整型内置变量`velocityCount`获取迭代次数, 值默认从`1`开始, 可以在配置文件中修改.
+            - 通过该值可以实现表格不同行的颜色区分
+        - 可以使用布尔类型内置变量`velocityHasNext`来判断是否还有下一个元素
+            - 可用于判断迭代是否完成
+    - `#foreach($index in [1..10])...#end`: 可以实现类似Java的`for(int i = 1; i <= 10; i++){}`的效果. 可以把初始值和结束值替换为变量.
+        - 可用于分页索引的计算
 
 ```vm
 ## 迭代list
