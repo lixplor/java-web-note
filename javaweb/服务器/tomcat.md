@@ -63,3 +63,14 @@ Tomcat通过使用映射的虚拟目录找到项目的目录. 所以在发布项
 * 方式1: 将项目放到`tomcat/webapps`下
 * 方式2: 修改`tomcat/conf/server.xml`中的`Host context`标签中的`path`为项目所在目录绝对路径
 * 方式3: 在`tomcat/conf/引擎目录/主机目录`下创建文件, 配置Context的docBase路径为项目所在绝对路径
+
+
+## 日志文件
+
+* 在Tomcat目录下的`logs`目录中, 存放Tomcat运行过程中的所有日志
+    - `catalina.out`: Tomcat运行时的日志, 所有`System.out/err`输出都会在这里
+    - `catalina.yyyy-MM-dd.log`: Tomcat运行时的日志, 按照日期拆分为单个文件
+    - `host-manager.yyyy-MM-dd.log`: Tomcat自带管理页面的日志
+    - `manager.yyyy-MM-dd.log`: Tomcat自带管理页面日志
+    - `localhost.yyyy-MM-dd.log`: 本机的一些异常日志
+    - `localhost_access_log.yyyy-MM-dd.txt`: Web服务访问日志
