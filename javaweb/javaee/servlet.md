@@ -180,14 +180,19 @@ public class Hello extends HttpServlet {
 
 ## 域对象
 
-具有不同生命周期和作用域的对象
-可用于存储状态或信息, 在域内共享
+* 都内置了Map集合来存储数据
+* 都提供了`setAttribute()`和`getAttribute()`方法
+* 都有自身特有的生命周期和作用域的对象
+* 域对象使用原则: 能用作用域小的域对象, 就不用更大的域对象
 
-* `ServletContext`
-* `Refequest`
-    - 创建: 请求来的时候
-    - 销毁: 响应生成的时候
-    - 作用: 一次请求里面的数据
+
+| 域对象       | 对应对象              | 作用域               | 生命周期开始     | 生命周期结束             | 备注 |
+|-------------|----------------------|---------------------|-----------------|-------------------------| - |
+| Application | `ServletContext`     | Web应用运行期间都有效 | Web应用加载时创建 | Web应用被移除或服务器关闭  | - |
+| Session     | `HttpSession`        | 在一次会话中有效      | 创建session      | session过期或被声明为失效 | - |
+| Request     | `HttpServletRequest` | 在当前请求中有效      | 接收到用户请求    | 处理完响应               | - |
+| Page        | `PageContext`        | 在当前JSP内有效       | JSP页面开始执行  | JSP页面执行完毕           | 仅对于JSP页面有效 |
+
 
 
 ## 功能
