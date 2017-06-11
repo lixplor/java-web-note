@@ -100,3 +100,49 @@ public void testHelloworld() {
         - `@RequiresRoles("admin")`
     3. JSP标签
         - `<shiro:hasRole name="admin">`
+
+
+## 编码和加密
+
+* 编码解码
+    - BASE64
+        - `Base64.encodeToString(str.getBytes());`
+        - `Base64.decodeToString(base64Encoded);`
+    - 十六进制
+        - `Hex.encodeToString(str.getBytes());`
+        - `Hex.decode(base64Encoded.getBytes());`
+* 散列算法
+    - `new Md5Hash(str, salt).toString();`
+    - `new Sha256Hash(str, salt).toString();`
+    - `new SimpleHash("SHA-1", str, salt).toString();`
+    - `DefaultHashService`
+* 加密解密
+    - AES
+* 密码加密和验证
+    - `PasswordService`
+    - `CredentialsMatcher`
+* 密码重试次数限制
+    - 继承`HashedCredentialsMatcher`
+
+```java
+public boolean doCredentialsMatch(AuthenticationToken token, AuthenticationInfo info) {
+    String username = (String)token.getPrincipal();
+    //retry count + 1
+    Element element = passwordRetryCache.get(username);
+    if(element == null) {
+        element = new Element(username , new AtomicInteger(0));
+        passwordRetryCache.put(element);
+    }
+    AtomicInteger retryCount = (AtomicInteger)element.getObjectValue();
+    if(retryCount.incrementAndGet() > 5) {
+        //if retry count > 5 throw
+        throw new ExcessiveAttemptsException();
+    }
+    boolean matches = super.doCredentialsMatch(token, info);
+    if(matches) {
+        //clear retry count
+        passwordRetryCache.remove(username);
+    }
+    return matches;
+}
+```
