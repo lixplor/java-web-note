@@ -146,3 +146,93 @@ public boolean doCredentialsMatch(AuthenticationToken token, AuthenticationInfo 
     return matches;
 }
 ```
+
+
+## Spring集成
+
+* `spring-shiro.xml`
+
+```xml
+<!-- 会话Cookie模板 -->
+<bean id="sessionIdCookie" class="org.apache.shiro.web.servlet.SimpleCookie">
+    <constructor-arg value="sid"/>
+    <property name="httpOnly" value="true"/>
+    <property name="maxAge" value="180000"/>
+</bean>
+<!-- 会话管理器 -->
+<bean id="sessionManager"
+class="org.apache.shiro.web.session.mgt.DefaultWebSessionManager">
+    <property name="globalSessionTimeout" value="1800000"/>
+    <property name="deleteInvalidSessions" value="true"/>
+    <property name="sessionValidationSchedulerEnabled" value="true"/>
+    <property name="sessionValidationScheduler" ref="sessionValidationScheduler"/>
+    <property name="sessionDAO" ref="sessionDAO"/>
+    <property name="sessionIdCookieEnabled" value="true"/>
+    <property name="sessionIdCookie" ref="sessionIdCookie"/>
+</bean>
+<!-- 安全管理器 -->
+<bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+<property name="realm" ref="userRealm"/>
+    <property name="sessionManager" ref="sessionManager"/>
+    <property name="cacheManager" ref="cacheManager"/>
+</bean>
+
+
+<!-- 基于Form表单的身份验证过滤器 -->
+<bean id="formAuthenticationFilter"
+class="org.apache.shiro.web.filter.authc.FormAuthenticationFilter">
+    <property name="usernameParam" value="username"/>
+    <property name="passwordParam" value="password"/>
+    <property name="loginUrl" value="/login.jsp"/>
+</bean>
+<!-- Shiro的Web过滤器 -->
+<bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+    <property name="securityManager" ref="securityManager"/>
+    <property name="loginUrl" value="/login.jsp"/>
+    <property name="unauthorizedUrl" value="/unauthorized.jsp"/>
+    <property name="filters">
+        <util:map>
+            <entry key="authc" value-ref="formAuthenticationFilter"/>
+        </util:map>
+    </property>
+    <property name="filterChainDefinitions">
+        <value>
+            /index.jsp = anon
+            /unauthorized.jsp = anon
+            /login.jsp = authc
+            /logout = logout
+            /** = user
+        </value>
+    </property>
+</bean>
+```
+
+* `web.xml`
+
+```xml
+<context-param>
+    <param-name>contextConfigLocation</param-name>
+    <param-value>
+        classpath:spring-beans.xml,
+        classpath:spring-shiro-web.xml
+    </param-value>
+</context-param>
+<listener>
+   <listener-class>
+org.springframework.web.context.ContextLoaderListener
+</listener-class>
+</listener>
+
+<filter>
+    <filter-name>shiroFilter</filter-name>
+    <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+    <init-param>
+        <param-name>targetFilterLifecycle</param-name>
+        <param-value>true</param-value>
+    </init-param>
+</filter>
+<filter-mapping>
+    <filter-name>shiroFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+</filter-mapping>
+```
