@@ -236,3 +236,41 @@ org.springframework.web.context.ContextLoaderListener
     <url-pattern>/*</url-pattern>
 </filter-mapping>
 ```
+
+
+## Session管理
+
+* Shiro提供的session管理不依赖于底层容器(如tomcat), 不论JavaSE还是JavaEE都可以使用
+* 提供会馆管理, 会话事件监听, 会话存储/持久化, 容器无关集群, 失效/过期支持, 对Web透明支持, SSO单点登录支持
+* 使用Shiro的会话管理, 可以直接替换Web容器的会话管理
+* 类和方法
+    * `SecurityUtils`
+        * `static Subject getSubject()`: 获取Subject
+    * `Subject`
+        * `Session getSession()`: 获取会话
+        * `static logout()`: 自动调用session的stop方法销毁会话
+    * `Session`
+        * `getId()`: 获取session唯一标识
+        * `getHost()`: 获取当前Subject的主机地址
+        * `getTimeout()`: 获取过期时间
+        * `setTimeout(long millis)`: 设置过期时间
+        * `getStartTimestamp()`: 获取session启动时间
+        * `getLastAccessTime()`: 获取最后访问时间
+        * `touch()`: 更新session最后访问时间. 如果是web项目, 则每次进入ShiroFilter都会自动调用该方法
+        * `stop()`: 销毁会话
+    * `SecurityManager`
+        * `Session start(SessionContext context)`: 启动会话
+        * `Session getSession(SessionKey key)`: 根据session的key获取session
+        * `boolean isServletContainerSessions()`: 是否使用Servelet容器的会话
+    * `ValidatingSessionManager`
+        * `void validateSessions()`: 验证所有会话是否过期
+
+
+
+### 获取session
+
+```java
+login("classpath:shiro.ini", "zhang", "123");
+Subject subject = SecurityUtils.getSubject();
+Session session = subject.getSession();
+```
