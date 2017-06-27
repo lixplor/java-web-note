@@ -243,6 +243,10 @@ org.springframework.web.context.ContextLoaderListener
 * Shiro提供的session管理不依赖于底层容器(如tomcat), 不论JavaSE还是JavaEE都可以使用
 * 提供会馆管理, 会话事件监听, 会话存储/持久化, 容器无关集群, 失效/过期支持, 对Web透明支持, SSO单点登录支持
 * 使用Shiro的会话管理, 可以直接替换Web容器的会话管理
+* Shiro提供的3个会话管理器默认实现类
+    - `DefaultSessionManager`: 是`DefaultWebSecurityManager`使用的默认实现, 用于Web环境, 直接使用Servlet容器的session
+    - `ServletContainerSessionManager`: 是`DefaultWebSecurityManager`使用的默认实现, 可以替代`ServletContainerSessionManager`, 自己维护session, 废弃了Servlet容器的session管理
+    - `DefaultWebSessionManager`: 用于Web环境, 替代`ServletContainerSessionManager`, 自己维护session, 废弃了Servlet容器的session管理
 * 类和方法
     * `SecurityUtils`
         * `static Subject getSubject()`: 获取Subject
