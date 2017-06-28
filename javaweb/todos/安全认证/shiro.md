@@ -278,3 +278,49 @@ login("classpath:shiro.ini", "zhang", "123");
 Subject subject = SecurityUtils.getSubject();
 Session session = subject.getSession();
 ```
+
+
+## 记住我功能
+
+* `sessionIdCookie`：maxAge=-1 表示浏览器关闭时失效此 Cookie；
+* `rememberMeCookie`：即记住我的 Cookie，保存时长 30 天；
+
+```xml
+spring-shiro-web.xml
+---------------------
+
+<bean id="sessionIdCookie" class="org.apache.shiro.web.servlet.SimpleCookie">
+    <constructor-arg value="sid"/>
+    <property name="httpOnly" value="true"/>
+    <property name="maxAge" value="-1"/>
+</bean>
+<bean id="rememberMeCookie" class="org.apache.shiro.web.servlet.SimpleCookie">
+    <constructor-arg value="rememberMe"/>
+    <property name="httpOnly" value="true"/>
+    <property name="maxAge" value="2592000"/><!-- 30天 -->
+</bean>
+
+<!-- rememberMe管理器 -->
+<bean id="rememberMeManager"
+class="org.apache.shiro.web.mgt.CookieRememberMeManager">
+    <property name="cipherKey" value="
+\#{T(org.apache.shiro.codec.Base64).decode('4AvVhmFLUs0KTA3Kprsdag==')}"/>
+     <property name="cookie" ref="rememberMeCookie"/>
+</bean>
+
+<!-- 安全管理器 -->
+<bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+  <property name="rememberMeManager" ref="rememberMeManager"/>
+</bean>
+
+<bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+    <property name="filterChainDefinitions">
+        <value>
+            /login.jsp = authc
+            /logout = logout
+            /authenticated.jsp = authc
+            /** = user
+        </value>
+    </property>
+</bean>
+```
