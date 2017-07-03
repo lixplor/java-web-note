@@ -852,6 +852,56 @@ SELECT country FROM Websites UNION SELECT country FROM apps ORDER BY country;
 SELECT country FROM Websites UNION ALL SELECT country FROM apps ORDER BY country;
 ```
 
+#### CASE 条件表达式
+
+* CASE表达式类似于`if...then...else`的逻辑
+* CASE分为2种
+    - 简单CASE: WHEN后的表达式只能完全匹配CASE后的表达式, 相当于使用`=`. 不能匹配`NULL`
+    - 搜索CASE: CASE可以作为比较条件, 使用`LIKE`, `!=`, `BETWEEN AND`等, 可以完全替代简单CASE
+
+```sql
+-- 简单CASE格式:
+CASE 列名
+    WHEN 值1 THEN 返回值1
+    ...
+    WHEN 值n THEN 返回值n
+    ELSE 其他情况返回值
+END
+
+-- 简单CASE示例
+CASE gender
+    WHEN '1' THEN '男'
+    WHEN '0' THEN '女'
+    ELSE '其他'
+END
+
+-- 搜索CASE格式
+CASE
+    WHEN 列名 = 值1 THEN 返回值1
+    ...
+    WHEN 列名 = 值n THEN 返回值n
+    ELSE 其他情况返回值
+END
+
+-- 搜索CASE示例
+CASE
+    WHEN gender = '1' THEN '男'
+    WHEN gender = '0' THEN '女'
+    ELSE '其他'
+END
+
+-- 一个完整的SQL示例
+UPDATE table SET uid =
+CASE
+    WHEN id = 1 THEN 1001  -- id为1的修改为1001
+    WHEN id = 2 THEN 1002  -- id为2的修改为1002
+    WHEN id = 3 THEN 1003  -- id为3的修改为1003
+    ELSE uid               -- id为其他的仍然使用uid的值
+END
+WHERE id in (1, 2, 3);
+```
+
+
 ## 函数
 
 * 聚合函数
