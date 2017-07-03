@@ -861,7 +861,7 @@ SELECT country FROM Websites UNION ALL SELECT country FROM apps ORDER BY country
 
 ```sql
 -- 简单CASE格式:
-CASE 列名
+CASE 列名或表达式
     WHEN 值1 THEN 返回值1
     ...
     WHEN 值n THEN 返回值n
@@ -877,9 +877,9 @@ END
 
 -- 搜索CASE格式
 CASE
-    WHEN 列名 = 值1 THEN 返回值1
+    WHEN 列名或表达式 = 值1 THEN 返回值1
     ...
-    WHEN 列名 = 值n THEN 返回值n
+    WHEN 列名或表达式 = 值n THEN 返回值n
     ELSE 其他情况返回值
 END
 
@@ -899,6 +899,21 @@ CASE
     ELSE uid               -- id为其他的仍然使用uid的值
 END
 WHERE id in (1, 2, 3);
+
+-- 输出one. CASE表达式时一个固定值, 相当于如果1=1, 则输出one
+SELECT
+CASE 1
+    WHEN 1 THEN 'one'
+    WHEN 2 THEN 'two'
+    ELSE 'more'
+END;
+
+-- 输出true. CASE中WHEN表达式是一个比较
+SELECT
+CASE
+    WHEN 1 > 0 THEN 'true'
+    ELSE 'false'
+END;
 ```
 
 
