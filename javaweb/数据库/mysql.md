@@ -349,7 +349,7 @@ CREATE TABLE Persons (
 
 一个表的外键指向另一个表中的主键
 * 作用
-    - 用于预防破坏表之间的连接行为
+    - 用于预防破坏表之间的连接行为, 保持数据的完整性
     - 防止非法数据插入外键列 (因为该值必须是它指向的表中的那个值之一)
 
 ```sql
@@ -586,7 +586,7 @@ SELECT * FROM Websites WHERE name LIKE 'G%';
 SELECT * FROM Websites WHERE name LIKE '_oogle';
 ```
 
-### REGEXP 和 NOT REGEXP 正则匹配
+#### REGEXP 和 NOT REGEXP 正则匹配
 
 使用正则匹配过滤结果
 * `REGEXP 正则表达式`: 返回匹配正则表达式的结果
@@ -737,7 +737,21 @@ GROUP BY Websites.name
 HAVING SUM(access_log.count) > 200;
 ```
 
-#### INNER JOIN 内连接子句
+
+### 多表查询
+
+#### 连接
+
+##### 交叉连接
+
+交叉连接查询的结果是两个表的笛卡尔积
+
+```sql
+-- 示例
+SELECT * FROM a, b;
+```
+
+##### INNER JOIN 内连接子句
 
 把来自两个或两个以上的表的记录结合起来, 基于表之间的共同字段
 如果两表中都匹配, 则返回记录
@@ -760,7 +774,7 @@ ON table1.column_name1=table2.column_name2;
 SELECT Websites.name, access_log.count, access_log.date FROM Websites INNER JOIN access_log ON Websites.id=access_log.site_id ORDER BY access_log.count;
 ```
 
-#### LEFT JOIN 左连接子句
+##### LEFT JOIN 左连接子句
 
 把来自两个或两个以上的表的记录结合起来, 基于表之间的共同字段
 即使右表中没有匹配, 也从左表返回所有的记录, 右表没有匹配的记录值为NULL
@@ -783,7 +797,7 @@ ON table_name1.column_name1=table_name2.column_name2;
 SELECT Websites.name, access_log.count, access_log.date FROM Websites LEFT JOIN access_log ON Websites.id=access_log.site_id ORDER BY access_log.count DESC;
 ```
 
-#### RIGHT JOIN 右连接子句
+##### RIGHT JOIN 右连接子句
 
 把来自两个或两个以上的表的记录结合起来, 基于表之间的共同字段
 即使左表中没有匹配, 也从右表中返回所有的记录. 左表没有匹配的记录值为NULL
@@ -806,7 +820,7 @@ ON table_name1.column_name1=table_name2.column_name2;
 SELECT Websites.name, access_log.count, access_log.date FROM Websites RIGHT JOIN access_log ON Websites.id=access_log.site_id ORDER BY access_log.count DESC;
 ```
 
-#### FULL JOIN 全连接子句
+##### FULL JOIN 全连接子句
 
 把来自两个或两个以上的表的记录结合起来, 基于表之间的共同字段
 只要其中一个表中存在匹配, 则返回记录
@@ -827,6 +841,24 @@ ON table_name1.column_name1=table_name2.column_name2;
 
 ```sql
 SELECT Websites.name, access_log.count, access_log.date FROM Websites FULL JOIN access_log ON Websites.id=access_log.site_id ORDER BY access_log.count DESC;
+```
+
+#### 子查询
+
+一个查询的结果可以作为另一个查询的表或条件
+子查询格式: 使用小括号`()`将子查询语句包裹起来
+子查询注意事项:
+    - 如果将子查询的结果作为FROM后的表, 则子查询结果必须起别名
+    - 如果将子查询的结果作为WHERE的条件, 则可以不起别名
+    - SELECT语句中可以直接使用子查询, 而UPDATE, DELETE语句中使用子查询, 必须在子查询外再套一层SELECT语句, 否则会报错
+
+```sql
+-- 子查询
+SELECT * FROM (SELECT * FROM a) AS ta;
+
+SELECT * FROM users WHERE age < (SELECT AVG(age) FROM users);
+
+DELETE FROM users WHERE age < (SELECT * FROM (SELECT AVG(age) FROM users) AS avg_age);
 ```
 
 #### UNION 合并操作符
@@ -1323,3 +1355,18 @@ password *****
 
 * SQL注入: 通过把SQL语句插入到Web表单提交, 最终到服务器执行恶意SQL命令
 * 永远不要相信用户的输入
+
+
+## 建表原则
+
+* 一对一
+    - 2种方式:
+        - 唯一外键对应: 将任意一个一方假设为多方, 增加一个字段, 设置为UNIQUE, 且作为外键指向另一个一方的主键
+            - UNIQUE约束用来限制该列id值唯一, 这样才能实现一对一唯一对应关系
+        - 主键对应: 将两个一方的主键建立映射关系, 即两个一方的主键字段的值是相互一致的, 这样也能实现一对一唯一对应关系
+* 一对多
+    - 2张表
+    - 在多方增加一个字段作为外键指向一方的主键
+* 多对多
+    - 3张表
+    - 创建一个中间关系表, 其中2个字段作为外键分别指向两个多方各自的主键
