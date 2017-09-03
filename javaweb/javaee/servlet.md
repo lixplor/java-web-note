@@ -9,10 +9,11 @@
 
 ## Servlet体系结构
 
-* `Servlet接口`
-    - `GenericServlet抽象类`
-        - `HttpServlet抽象类`
-            - 自定义Servlet实现类
+* 体系结构
+    - `Servlet`接口
+        - `GenericServlet抽象类`
+            - `HttpServlet抽象类`
+                - 自定义Servlet实现类
 * Servlet接口常用方法:
     - `void init(ServletConfig config)`: 初始化配置
     - `void service(ServletRequest req, ServletResponse res)`: 处理请求
@@ -37,16 +38,15 @@ Servlet是单实例, 多线程的. 每个请求创建一个线程, 调用`servic
 * `ServletConfig`
     - Servlet配置对象
     - 获取Servlet名称, 初始化参数
-
-使用步骤:
-* 编写一个类
-    - 继承`HttpServlet`
-    - 重写`doXxx(HttpServletRequest req, HttpServletResponse res)`等Http动作方法
-* 编写配置文件
-    - 在`WEB-INF`中创建`web.xml`
-    - 注册Servlet
-    - 映射url
-* 访问
+* 使用步骤:
+    - 编写一个类
+        - 继承`HttpServlet`
+        - 重写`doXxx(HttpServletRequest req, HttpServletResponse res)`等Http动作方法
+    - 编写配置文件
+        - 在`WEB-INF`中创建`web.xml`
+        - 注册Servlet: `<servlet>`
+        - 映射url: `<servlet-mapping>`
+    - 访问URL: `http"//IP:端口号/项目名/Servlet映射的URL`
 
 ```java
 public class Hello extends HttpServlet {
@@ -59,27 +59,19 @@ public class Hello extends HttpServlet {
 ```
 
 ```xml
-<!-- 注册servelt -->
+<!-- web.xml -->
+<!-- 注册Servlet -->
 <servlet>
-    <servlet-name>ServletName</servlet-name>
-    <servlet-class>com.package.ClassName</servlet-class>
+    <servlet-name>Servlet自定义名称</servlet-name>
+    <servlet-class>Servlet实现类的全类名</servlet-class>
 </servlet>
 
-<!-- 绑定路径 -->
+<!-- 映射Servlet到URL -->
 <servlet-mapping>
-    <servlet-name>ServletName</servlet-name>
-    <url-patter>/xxx</url-pattern>
+    <servlet-name>Servlet自定义名称</servlet-name>
+    <url-pattern>/要映射的URL</url-pattern>
 </servlet-mapping>
 ```
-
-### 获取参数
-
-* `HttpServletRequest`对象
-    - `getParameter(key)`: 获取指定key的value
-* `HttpServletResponse`对象
-    - `setContentType(String)`
-    - `getWriter()`
-
 
 ## url-pattern配置
 
@@ -129,11 +121,6 @@ public class Hello extends HttpServlet {
     - 通用方法: `new String(参数.getBytes("iso-8859-1"), "utf-8")`
     - 针对于post请求: 将请求流编码设置为utf-8, `request.setCharacterEncoding("utf-8")`
 
-### 重要请求头
-
-* `user-agent`
-* `referer`
-
 ## HttpServletResponse
 
 * 响应码
@@ -157,14 +144,6 @@ public class Hello extends HttpServlet {
 > getWriter和getOutputStream两个流互斥, 不能同时使用
 > 响应完毕后, 服务器会自动关闭流
 
-## 响应头
-
-* `location`: 用于302重定向的新url
-* `refresh`: 定时刷新
-* `Content-Type`: 设置文件mime类型, 设置响应流编码, 告诉浏览器用什么编码打开
-* `Content-disposition`: 用于文件下载
-
-
 
 ## 请求的重定向和转发的区别
 
@@ -176,7 +155,6 @@ public class Hello extends HttpServlet {
     - 状态码`302`
     - 多次请求
     - 地址栏url改变
-
 * `转发`
     - `request.getRequestDispatcher("内部路径").forward(request, response)`
     - 是request的方法
