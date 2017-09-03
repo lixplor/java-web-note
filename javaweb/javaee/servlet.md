@@ -1,6 +1,14 @@
 # Servlet
 
-体系结构:
+## Servlet规范
+
+* Servlet 2.4: 支持Tomcat 5
+* Servlet 2.5: 支持JDK 5, Tomcat 6
+* Servlet 3.0: 支持JDK 6, Tomcat 7, 支持注解替代web.xml
+* Servlet 3.1
+
+## Servlet体系结构
+
 * `Servlet接口`
     - `GenericServlet抽象类`
         - `HttpServlet抽象类`
