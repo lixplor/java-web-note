@@ -56,12 +56,11 @@ project/
 
 ## 配置
 
-* 参考[官方文档](https://tomcat.apache.org/tomcat-7.0-doc/config/index.html)
-    - Tomcat配置文件是无约束的XML
-    - 标签和属性都是大小写敏感的
-    - 支持Apache Ant风格的变量替换
-
 * 服务器配置: `tomcat/conf/server.xml`
+    - 该配置文件参考Tomcat官网, 参考[官方文档](https://tomcat.apache.org/tomcat-7.0-doc/config/index.html)
+        - Tomcat配置文件是无约束的XML
+        - 标签和属性都是大小写敏感的
+        - 支持Apache Ant风格的变量替换
     - `<Server>`: 根标签. 代表整个Catalina Servlet容器. 其属性表示整个Servlet容器的特性
         - 属性:
             - `className`: 实现了`org.apache.catalina.Server`接口的实现类的全类名. 如果不指定, 则使用标准实现类`org.apache.catalina.core.StandardServer`
@@ -195,6 +194,7 @@ project/
 ```
 
 * Web应用配置: `tomcat/conf/web.xml`
+    - 该配置文件需要参考Servlet规范, 参见[官方文档](https://docs.oracle.com/cd/E24329_01/web.1211/e21049/web_xml.htm#WBAPP502)
 
 ```xml
 
