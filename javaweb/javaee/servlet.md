@@ -9,11 +9,15 @@
 
 ## Servlet体系结构
 
-* 体系结构
-    - `Servlet`接口
-        - `GenericServlet抽象类`
-            - `HttpServlet抽象类`
-                - 自定义Servlet实现类
+* Servlet体系结构
+
+```
+Servlet接口
+    |_ GenericServlet抽象类
+        |_ HttpServlet抽象类
+            |_ 自定义Servlet实现类
+```
+
 * Servlet接口常用方法:
     - `void init(ServletConfig config)`: 初始化配置
     - `void service(ServletRequest req, ServletResponse res)`: 处理请求
@@ -24,8 +28,7 @@
     - init()空实现
 * HttpServlet方法:
     - 实现了`service()`方法, 转换为`doXxx()`方法
-* Servlet生命周期    
-Servlet是单实例, 多线程的. 每个请求创建一个线程, 调用`service()`方法执行自己的业务逻辑
+* Servlet生命周期: Servlet是单实例, 多线程的. 每个请求创建一个线程, 调用`service()`方法执行自己的业务逻辑
     - `init(ServletConfig conf)`
         - 初始化
         - 默认第一次访问时调用
@@ -76,21 +79,31 @@ public class Hello extends HttpServlet {
 ## url-pattern配置
 
 * 配置方式:
-    - 完全匹配
+    - 完全路径匹配
         - 必须以`/`开始
         - 如`/login`, `/user/signup`
     - 目录匹配
         - 必须以`/`开始, 且以`*`结束
         - 如`/book/*`
     - 后缀名匹配
-        - 以`*`开始, 以后缀名字符结束
+        - 以`*`开始, 以后缀名字符结束. 注意不能以`/`开头
         - 如`*.jsp`, `*.do`, `*.action`
 * 优先级
-    - `完全匹配 > 目录匹配 > 后缀名匹配`
+    - `完全路径匹配 > 目录匹配 > 后缀名匹配`
+
+## URL路径分类
+
+* 相对路径: 以`.`或`..`开头
+    - 相对于当前路径的路径
+* 绝对路径:
+    - 以`http://`开头
+    - 以`/`开头
+        - 客户端路径: 路径中带有项目名称
+        - 服务端路径: 路径中不用带有项目名称. 一般在转发时使用
 
 ## load-on-startup标签
 
-作用: 修改servlet的初始化时机
+作用: 修改servlet的初始化时机. Servlet默认在第一次被访问时才初始化, 会影响效率. 可以设置此标签, 让Servlet在服务器启动时就初始化
 取值: 正整数. 值越大, 优先级越低
 
 

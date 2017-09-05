@@ -279,7 +279,7 @@ project/
                             - 内部标签:
                                 - `<param-name>`: 参数名
                                 - `<param-value>`: 参数值
-                        - `<load-on-startup>`: Servlet启动优先级, 为正数时, 数越小加载越早. 为负数表示随机优先级
+                        - `<load-on-startup>`: 在服务器启动时就初始化该Servlet. 数字表示Servlet启动优先级, 为正数时, 数越小优先级越高加载越早. 为负数表示随机优先级
                         - `<run-as>`: 指定执行web应用的角色
                 - `<servlet-mapping>`: 定义URL映射到哪个Servlet
                     - 内部标签:

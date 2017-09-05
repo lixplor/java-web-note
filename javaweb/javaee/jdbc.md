@@ -201,7 +201,7 @@ conn.close();
         - `BasicDataSourceFactory`
     - `C3P0`: 开源的JDBC连接池, Hibernate, Spring都在使用
 
-* DBCP
+### DBCP
 
 ```java
 Connection conn = null;
@@ -229,9 +229,9 @@ try {
 }
 ```
 
+* 配置文件: dbcp.properties
+
 ```text
-dbcp.properties
----------------
 # 连接设置
 driverClassName=com.mysql.jdbc.Driver
 url=jdbc:mysql://ip:port/db_name
@@ -254,7 +254,7 @@ minIdle=5
 maxWait=6000
 ```
 
-* C3P0
+### C3P0
 
 ```java
 Connection conn = null;
@@ -263,10 +263,11 @@ try {
     // 创建连接池
     ComboPooledDataSource source = new ComboPooledDataSource();
     // 设置参数
-    source.setDriverClass("com.mysql.jdbc.Driver");
+    /*source.setDriverClass("com.mysql.jdbc.Driver");
     source.setJdbcUrl("jdbc:mysql://ip:port/db_name");
     source.setUser("root");
-    source.setPassword("1234");
+    source.setPassword("1234");*/
+    // 也可以使用配置文件配置以上信息, C3P0会自动去寻找c3p0-config.xml文件
 
     conn = source.getCOnnection();
     String sql = "INSERT INTO table VALUES (null, ?);";
@@ -280,9 +281,27 @@ try {
 }
 ```
 
+* 配置文件: c3p0-config.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<c3p0-config>
+    <default-config>
+        <property name="driverClass">com.mysql.jdbc.Driver</property>
+        <property name="jdbcUrl">jdbc:mysql://ip:port/dbname</property>
+        <property name="user">user </property>
+        <property name="password">password</property>
+    </default-config>
+</c3p0-config>
+```
+
+### Druid
+
+@todo
 
 
 ## JDBC工具类
+    - 针对DBCP, C3P0等连接池不同的配置需要进行修改
 
 ```Java
 public class JDBCUtil {
