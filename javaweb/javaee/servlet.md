@@ -38,9 +38,6 @@ Servlet接口
     - `destroy()`
         - 销毁Servlet实例
         - Servlet实例销毁时调用, 如Servlet被移除, 服务器关闭等
-* `ServletConfig`
-    - Servlet配置对象
-    - 获取Servlet名称, 初始化参数
 * 使用步骤:
     - 编写一个类
         - 继承`HttpServlet`
@@ -109,30 +106,34 @@ public class Hello extends HttpServlet {
 
 ## HttpServletRequest
 
-* 操作请求行
+* 获取请求行信息
     - `String getMethod()`: 获取请求方法
-    - `String getRemoteAddr()`: 获取请求ip
+    - `String getProtocol()`: 获取协议和版本
     - `String getContextPath()`: 获取项目名称
     - `String getRequestURI()`: 获取从项目名到参数之间的内容, 如`/user/id`
-    - `String getRequestURL()`: 获取带协议的完整请求路径, 如`http://localhost/user/id`
+    - `StringBuffer getRequestURL()`: 获取带协议的完整请求路径, 如`http://localhost/user/id`
     - `String getQueryString()`: 获取get请求的所有参数的字符串, 如`username=123&pwd=123`
-    - `String getProtocol()`: 获取协议和版本
-* 操作请求头
+* 获取请求头信息
     - `String getHeader(String key)`: 获取指定头
     - `Enumeration getHeaders(String name)`: 获取多个指定头
     - `Enuermation getHeaderNames()`: 获取所有请求头的名称
     - `int getIntHeader(String key)`: 获取整形请求头
     - `long getDateHeader(String key)`: 获取时间请求头
-* 操作请求参数
+* 获取请求参数
     - `String getParameter(String key)`: 获取指定参数
     - `String[] getParameterValues(String key)`: 获取同一个key的多个参数
     - `Map<String, String[] getParameterMap()`: 获取所有的参数key和value
     - `Enumeration getParameterNames()`: 获取所有参数key
-* 处理参数编码
-    - get请求: 参数在地址栏, 使用utf-8进行url编码
-    - post请求: 参数放在请求体中
-    - 通用方法: `new String(参数.getBytes("iso-8859-1"), "utf-8")`
-    - 针对于post请求: 将请求流编码设置为utf-8, `request.setCharacterEncoding("utf-8")`
+* 获取客户端信息
+    - `String getRemoteAddr()`: 获取请求发送方的IP地址
+    - `String getRemoteHost()`: 获取请求发送方的主机名
+    - `String getRemotePort()`: 获取请求发送方的端口号
+* 作为域对象存取数据
+    - `void setAttribute(String name, Object value)`: 保存数据键值对
+    - `Object getAttribute(String name)`: 根据键获取值
+    - `void removeAttribute(String name)`: 根据键删除键值对
+* 获取Cookie
+    - `Cookie[] getCookies()`: 获取所有Cookie
 
 ## HttpServletResponse
 
@@ -140,41 +141,43 @@ public class Hello extends HttpServlet {
     - `setStatus(int code)`: 针对1xx, 2xx, 3xx
     - `setError(int code)`: 针对4xx, 5xx
 * 响应头
-    - `setHeader(String key, String value)`: 设置字符串类型值响应头
-    - `setIntHeader(String key, int value)`: 设置整形数字类型值的响应头
-    - `setDateHeader(String key, long value)`: 设置时间类型值的响应头
-    - `addHeader(String key, String value)`: 增加
-    - `addIntHeader(String key, int value)`
-    - `addDateHeader(String key, long value)`
-    - `sendRedirect(Strin location)`: 重定向到指定url
-    - `setContentType(String type)`
-    - `Writer getWriter()`: 字符输出流
-        - `print(String text)`
-        - `println(String text)`
+    - `setHeader(String key, String value)`: 设置字符串类型值响应头, 覆盖
+    - `setIntHeader(String key, int value)`: 设置整型数字类型值的响应头, 覆盖
+    - `setDateHeader(String key, long value)`: 设置时间类型值的响应头, 覆盖
+    - `addHeader(String key, String value)`: 增加字符串类型值响应头, 追加
+    - `addIntHeader(String key, int value)`: 增加整型数字类型值的响应头, 追加
+    - `addDateHeader(String key, long value)`: 增加时间类型值的响应头, 追加
+    - `sendRedirect(String location)`: 重定向到指定url
+    - `setContentType(String type)`: 设置内容类型
+* 写出响应
+    - `PrintWriter getWriter()`: 字符输出流
+        - `print(String text)`: 输出不换行
+        - `println(String text)`: 输出并换行
     - `ServletOutputStream getOutputStream()`: 字节输出流
-
-> 注意:
-> getWriter和getOutputStream两个流互斥, 不能同时使用
-> 响应完毕后, 服务器会自动关闭流
+    - 注意:
+        - getWriter和getOutputStream两个流互斥, 不能同时使用, 否则会报错
+        - 响应完毕后, 服务器会自动关闭流
+* 写出Cookie
+    - `void addCookie(Cookie cookie)`: 向响应中添加一个Cookie, 写入到浏览器
 
 
 ## 请求的重定向和转发的区别
 
-* `重定向`
+* 重定向
     - `response.setRedirect(url)`
     - 是response的方法
     - 可以请求站外资源
-    - 浏览器发送的, 将请求重定向到其他位置
+    - 告诉浏览器将请求重定向到其他位置, 让浏览器向新地址重新发送请求
     - 状态码`302`
-    - 多次请求
+    - 多次请求, 会影响Request域对象
     - 地址栏url改变
-* `转发`
-    - `request.getRequestDispatcher("内部路径").forward(request, response)`
+* 转发
+    - `request.getRequestDispatcher("服务端路径").forward(request, response)`
     - 是request的方法
     - 不能请求站外资源
-    - 服务器内部转发
+    - 在服务端内部转发该请求信息, 与浏览器无关
     - 状态码不变
-    - 一次请求
+    - 一次请求, 不会影响Request域对象
     - 地址栏url不变
 
 ## 域对象
@@ -192,6 +195,40 @@ public class Hello extends HttpServlet {
 | Request     | `HttpServletRequest` | 在当前请求中有效      | 接收到用户请求    | 处理完响应               | - |
 | Page        | `PageContext`        | 在当前JSP内有效       | JSP页面开始执行  | JSP页面执行完毕           | 仅对于JSP页面有效 |
 
+* `ServletConfig`: 不是域对象. Servlet的配置对象
+    - 作用:
+        - 用于获取Servlet名称, 初始化参数
+    - 常用方法:
+        - `String getInitParameter(String name)`: 通过当前Servlet的初始化参数名获取参数值(web.xml中`servlet`中的`init-param`的键值对), 如果没有则返回null
+        - `Enumeration getInitParameterNames()`: 获取初始化参数名的枚举
+        - `ServletContext getServletContext()`: 获取ServletContext对象
+        - `String getServletName()`: 获取当前Servlet的名称(在web.xml中配置的servlet-name)
+* `ServletContext`: Application域对象. 一个web应用只有一个该对象, 无论有多少个Servlet
+    - 作用:
+        - 获取全局初始化参数(context-param)
+        - 获取文件的MIME类型
+        - 作为域对象存取数据
+        - 读取web项目下的文件
+    - 获取该对象的方法:
+        - `GenericServlet`的`ServletContext getServletContext()`方法
+    - 常用方法:
+        - 获取全局初始化参数
+            - `String getInitParameter(String name)`: 通过web应用的全局的初始化参数名获取参数值(web.xml中`web-app`中的`context-param`标签中的键值对)
+            - `Enumeration getInitParameterNames()`: 获取全局初始化参数名的枚举
+        - 获取文件MIME类型
+            - `String getMimeType(String file)`: 获取文件的MIME类型(无论文件是否存在, 只通过文件后缀名判断)
+        - 作为域对象存取数据
+            - `void setAttribute(String name, Object value)`: 保存数据键值对
+            - `Object getAttribute(String name)`: 根据键获取值
+            - `void removeAttribute(String name)`: 根据键删除键值对
+        - 读取项目中的文件
+            - `InputStream getResourceAsStream(String path)`: 获取指定路径文件的输入流
+            - `String getRealPath(String path)`: 获取一个路径在磁盘上的绝对路径
+* `ServletHttpRequest`: Request域对象
+    - 作为域对象存取数据
+        - `void setAttribute(String name, Object value)`: 保存数据键值对
+        - `Object getAttribute(String name)`: 根据键获取值
+        - `void removeAttribute(String name)`: 根据键删除键值对
 
 
 ## 功能
@@ -218,35 +255,57 @@ public class Hello extends HttpServlet {
         - 空: 用户不存在
         - 非空: 允许登录
 
-### 自动跳转
-
-通过设置响应头的`refresh`字段实现
-* `refresh: 延时秒数;url=要跳转的路径`
-
-```java
-response.setHeader("refresh", "3;url=/login.html");
-```
-
 ### 统计用户登录成功次数
 
-数据库增加一个登录成功次数字段, 每次登录成功将该字段值取出, 加1, 然后保存
-`ServletContext`
+* 数据库增加一个登录成功次数字段, 每次登录成功将该字段值取出, 加1, 然后保存
+* 使用`ServletContext`域对象保存键值对(仅在应用运行期间有效)
 
 ### 文件下载
 
-* 获取下载请求的文件名称
-    - `request.getParameter(key, value)`
-    - 注意如果有中文的话, 需要处理编码
-* 设置文件mime类型
-    - `String mime = this.getServletContext().getMimeType(filename)`
-    - `response.setContentType(mime)`
-* 设置下载头信息: `content-disposition`
-    - `response.setHeader("Content-Disposition", "attachment;filename=" + filename)`
-    - 注意文件名, 如果包含中文, 则需要utf-8编码. 对于FireFox, 需要使用Base64编码
-* 提供下载文件的对拷流
-    - `InputStream is = context.getResourceAsStream()`
-    - `ServletOutputStream os = response.getOutputStream()`
-* 问题: 并发请求下载同一个文件怎么办?
+* 文件下载的2种方式
+    - 点击超链接自动下载. 如果该文件类型 浏览器支持预览, 则会直接打开预览; 如果浏览器不支持预览, 则会提示下载
+    - 代码方式下载
+        - 2个响应头(`Content-Type`, `Content-Disposition`), 1组流(被下载文件的字节输入流, 写出到浏览器的字节输出流)
+        - 步骤
+            - 获取下载请求的文件名称
+                - `request.getParameter(key, value)`
+                - 注意如果有中文的话, 需要处理编码
+            - 设置文件mime类型响应头
+                - `String mime = this.getServletContext().getMimeType(filename)`
+                - `response.setContentType(mime)`
+            - 设置下载响应头: `content-disposition`
+                - `response.setHeader("Content-Disposition", "attachment;filename=" + filename)`
+                - 注意文件名, 如果包含中文, 则需要utf-8编码. 对于FireFox, 需要使用Base64编码
+            - 提供下载文件的字节输出流
+                - `InputStream is = context.getResourceAsStream(String path)`
+                - `ServletOutputStream os = response.getOutputStream()`
+        - 问题: 并发请求下载同一个文件怎么办?
+
+```java
+protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    // 获取请求参数中的文件名
+    String filename = request.getParameter("filename");
+    // 根据请求的文件后缀名, 获取该文件的MIME类型
+    String type = getServletContext().getMimeType(filename);
+    // 设置Content-Type响应头
+    response.setHeader("Content-Type", type);
+    // 设置Content-Disposition响应头
+    response.setHeader("Content-Disposition", "attachment;filename=" + filename);
+    // 获取文件的真实路径
+    String realPath = getServletContext().getRealPath("/download/" + filename);
+    // 获取文件的输入流
+    InputStream in = new FileInputStream(realPath);
+    // 获取response的输出流
+    OutputStream out = response.getOutputStream();
+    // 读写流
+    byte[] buf = new byte[1024 * 1024 * 2];
+    int len;
+    while ((len = in.read(buf)) != -1) {
+        out.write(buf, 0, len);
+    }
+    in.close();
+}
+```
 
 ### Response生成验证码
 
@@ -329,3 +388,95 @@ public void doGet(HttpServletRequest request, HttpServletResponse response) thro
 ### referer防盗链判断
 
 referer为null, 地址栏输入的
+
+### 控制页面自动跳转
+
+* 3种方式
+    - 通过`response`对象的`setStatus(int code)`设置响应码302, 和`setHeader(String key, String value)`设置响应头`Refresh:秒数;url=跳转地址`
+    - 通过`response`对象的`sendRedirect(String url)`设置
+    - 通过HTML页面的`<meta http-equiv="Refresh" content="秒数;url=跳转地址"`
+
+### 中文乱码处理
+
+* Request获取的请求参数乱码
+    - 针对GET请求:
+        - 乱码原因: GET请求参数在URL中, Tomcat对URL编码默认使用ISO-8859-1, 所以中文乱码.
+        - 解决方式:
+            - 方式1: 将参数字符串重新转码, `new String(参数.getBytes("iso-8859-1"), "utf-8")`
+            - 方式2: 使用URLEncoder和URLDecoder编解码
+            - 方式3: 修改Tomcat配置文件`server.xml`将`Connector`的`URIEncoding`属性值设置为`UTF-8`
+    - 针对POST请求:
+        - 乱码原因: POST请求参数在请求体中, 请求体字符缓冲区默认是ISO-8859-1
+        - 解决方式: 修改请求的字符缓冲区编码, `request.setCharacterEncoding("utf-8");`
+* Response写出的内容乱码
+    - 页面乱码:
+        - 字节流输出中文乱码
+            - 乱码原因: 代码写出的字符串的编码和浏览器解析页面的编码不一致. Java中字符串获取字节数组默认按照ANSI本地编码
+            - 解决方案:
+                - 将代码写出的字符串编码和页面Content-Type响应头中的编码统一:
+                    - 设置代码中字符串的编码: `getOutputStream().write("中文".getBytes("utf-8"));`
+                    - 设置要求浏览器使用的编码: `response.setContentType("text/html; charset=utf-8")`
+        - 字符流输出中文乱码
+            - 乱码原因: 代码写出的字符串的编码和浏览器解析页面的编码不一致. 字符流中有缓冲区, 默认是ISO-8859-1
+            - 解决方案:
+                - 将response对象中的字符缓冲区编码和页面Content-Type响应头中的编码统一:
+                    - 设置代码中字符串的编码: `response.setCharacterEncoding("utf-8");`
+                    - 设置要求浏览器使用的编码: `response.setContentType("text/html; charset=utf-8")`
+    - 下载文件名乱码:
+        - IE浏览器:
+            - 乱码原因: IE浏览器对于文件名使用URL编码
+            - 解决方式: 通过request对象获取`User-Agent`请求头, 判断是否包含`Firefox`字符串, 不是则使用`String URLEncoder.encode(String s, String charsetName)`对文件名使用utf-8字符集进行URL编码
+        - Firefox浏览器:
+            - 乱码原因: Firefox浏览器对于文件名使用Base64编码
+            - 解决方式: 通过request对象获取`User-Agent`请求头, 判断是否包含`Firefox`字符串, 是则使用Base64对文件名进行编码
+
+
+## 缓存会话
+
+### Cookie
+
+* 作用: 将数据保存在客户端或浏览器
+* 默认情况下, 浏览器关闭Cookie就会销毁, 但可以设置Cookie的过期时间, 等超时后才删除
+* `Cookie`类
+    - 构造方法:
+        - `Cookie Cookie(String name, String value)`: 使用键值对创建一个Cookie
+    - 常用方法:
+        - `String getName()`: 获取Cookie的名称
+        - `String getValue()`: 获取Cookie的值
+        - `void setDomain(String pattern)`: 指定Cookie的有效域名.
+        - `void setPath(String uri)`: 指定访问哪个路径时才能获取到Cookie
+        - `void setMaxAge(int expire)`: 设置Cookie的有效时间, 单位为秒. 如果设置为0, 则相当于让浏览器删除当前的Cookie(有效路径必须一致), 刷新页面即可
+* 获取和设置Cookie的相关方法:
+    - 服务端向浏览器写入cookie: 使用Response对象
+        - `httpServletResponse.addCookie(Cookie cookie)`
+    - 服务端读取浏览器的cookie: 使用Request对象
+        - `httpServletRequest.getCookies()`
+* 常见应用场景
+    - 记住用户名
+    - 浏览记录
+
+
+* 查找指定键的Cookie工具类
+
+```java
+public class CookieUtils {
+
+    private CookieUtils() {}
+
+    public static Cookie getCookie(Cookie[] cookies, String name) {
+        if (cookies == null)
+            return null;
+        for (Cookie cookie : cookies) {
+            if (name.equals(cookie.getName()))
+                return cookie;
+        }
+        return null;
+    }
+}
+```
+
+
+### Session
+
+* 作用: 将数据保存在服务端, 客户端或浏览器只保存一个与数据对应的sessionId
+* 一般保存私有信息
