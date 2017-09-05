@@ -61,7 +61,7 @@ project/
         - Tomcat配置文件是无约束的XML
         - 标签和属性都是大小写敏感的
         - 支持Apache Ant风格的变量替换
-    - `<Server>`: 根标签. 代表整个Catalina Servlet容器. 其属性表示整个Servlet容器的特性
+    - `<Server>`: **必选**. 根标签. 代表整个Catalina Servlet容器. 其属性表示整个Servlet容器的特性
         - 属性:
             - `className`: 实现了`org.apache.catalina.Server`接口的实现类的全类名. 如果不指定, 则使用标准实现类`org.apache.catalina.core.StandardServer`
             - `address`: 服务器等待关闭命令的TCP/IP地址. 如果不指定, 则使用`localhost`
@@ -88,7 +88,7 @@ project/
                                 - `maxPostSize`: 容器处理的FORM表单的POST请求的最大字节数. 设置为0则表示禁用该限制. 如果没有指定, 默认为2097152(2MB). 可以使用`FailedRequestFilter`来拒绝超出限制的请求
                                 - `maxSavePostSize`: 容器在FORM表单或CLIENT-CERT验证时允许保存/缓冲的POST请求的最大字节数. 设置为`-1`可以禁用该限制, 设置为`0`可以禁用验证期间的POST数据的保存. 如果没有指定, 默认为4096(4KB)
                                 - `parseBodyMethods`: 以逗号分隔的HTTP方法列表. 用于RESTful应用通过POST形式来支持PUT请求. 默认是`POST`
-                                - **`port`**: Connector创建server socket等待连接的TCP端口号. 设置为`0`则Tomcat会随机选择一个可用的端口
+                                - `port`: **必选**. Connector创建server socket等待连接的TCP端口号. 设置为`0`则Tomcat会随机选择一个可用的端口
                                 - `protocol`: 设置处理请求的协议. 默认是`HTTP/1.1`
                                 - `proxyName`: 如果该Connector用于代理配置, 则要使用该属性来指定`request.getServerName()`时返回的服务器名称.
                                 - `proxyPort`: 如果该Connector用于代理配置, 则要使用该属性来指定`request.getServerPort()`时返回的服务器端口号
@@ -146,7 +146,7 @@ project/
                             - `<Realm>`: 域. 配置域可以指定允许何种用户或角色在不同的Host和Context之间共享
                             - `<Host>`: 表示一个虚拟主机, 是一个服务器网络名称与服务器的组合. 一个Engine中可以有多个Host标签. Host标签中可以有Context标签.
                                 - 属性:
-                                    - **`appBase`**: 虚拟主机的应用目录. 是发布web应用的目录, 路径可以是绝对路径, 也可以是相对于`$CATALINA_BASE`目录的相对路径. 如果没指定, 默认使用`webapps`
+                                    - `appBase`: **必选**. 虚拟主机的应用目录. 是发布web应用的目录, 路径可以是绝对路径, 也可以是相对于`$CATALINA_BASE`目录的相对路径. 如果没指定, 默认使用`webapps`
                                     - `xmlBase`: 虚拟主机的XML目录. 是包含XML描述符的目录, 路径可以是绝对路径, 也可以是相对于`$CATALINA_BASE`目录的相对路径. 如果没指定, 默认使用`conf/<engine_name>/<host_name>`
                                     - `createDirs`: 设置为`true`则Tomcat会在启动时创建`appBase`和`xmlBase`目录. 默认为`true`. 如果无法创建, 则会打印错误信息, 但不会终止启动流程
                                     - `autoDeploy`: 指示Tomcat是否定期检查新的web应用. 如果设置为`true`, 则Tomcat会定期检查appBase和xmlBase目录并部署新的web应用或XML描述符. 更新web应用或XML描述符会出发web应用重新加载. 默认为`true`
@@ -155,7 +155,7 @@ project/
                                     - `deployIgnore`: 设置了`autoDeploy`和`deployOnStartup`后要忽略的路径的正则表达式. 一般用于忽略版本控制相关的目录. 正则表达式路径相对于`appBase`目录
                                     - `deployOnStartup`: 是否在Tomcat启动时自动部署web应用. 默认`true`
                                     - `failCtxIfServletStartFails`: ...
-                                    - **`name`**: 虚拟主机的网络名称, 是注册在DNS上的. Tomcat会将其转换为小写字母. Engine中至少要有一个Host的name匹配Engine中`defaultHost`的值
+                                    - `name`: **必选**. 虚拟主机的网络名称, 是注册在DNS上的. Tomcat会将其转换为小写字母. Engine中至少要有一个Host的name匹配Engine中`defaultHost`的值
                                     - `startStopThreads`: 该Host用于启动子Host标签的线程数量. `0`表示使用`Runtime.getRuntime().availableProcessors()`的值, 负数表示使用`Runtime.getRuntime().availableProcessors() + value`的值. 如果没有指定, 默认为`1`
                                     - `undeployOldVersions`: 是否自动将旧的不用的web应用的版本卸载. 必须将`autoDeploy`设置为`true`后才有效. 默认`false`
                                     - `copyXML`: 设置为`true`则在应用部署时将应用中的XML描述符(位于`/META-INF/context.xml`)复制到`xmlBase`路径中. 默认`false`
@@ -163,6 +163,7 @@ project/
                                     - `errorReportValveClass`: 用于错误报告的Java类名, 是`org.apache.catalina.Valve`接口实现类的全类名, 默认`org.apache.catalina.valves.ErrorReportValve`
                                     - `unpackWARs`: 设置为`true`则将`appBase`目录中的WAR文件自动解压. 设置为`false`则直接从该WAR文件运行web应用
                                     - `workDir`: 用于应用临时读写的目录. 如果没指定, 默认`$CATALINA_BASE/work`
+
 
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
@@ -194,23 +195,53 @@ project/
 </Server>
 ```
 
+
 * 用户配置: `tomcat/conf/tomcat-users.xml`
+    - 参考[官方文档](https://tomcat.apache.org/tomcat-7.0-doc/manager-howto.html)
+    - 默认该配置文件中没有定义任何用户, 相当于禁用web页面的用户管理, 这样是为了保证安全
+    - 标签:
+        - `<tomcat-users>`: **必选**. 根标签
+            - 内部标签:
+                - `<role>`: 定义角色
+                    - 属性:
+                        - `rolename`: 角色类型
+                - `<user>`: 定义用户
+                    - 属性:
+                        - `username`: 用户名
+                        - `password`: 密码
+                        - `roles`: 该用户的角色, 可以有多个值, 用逗号隔开
+                            - 可选值:
+                                - `manager-gui`: 可以访问HTML界面
+                                - `manager-status`: 只可以访问`Server Status`页面
+                                - `manager-script`: 可以访问文本配置界面和`Server Status`页面
+                                - `manager-jmx`: 可以访问JMX代理接口和`Server Status`页面
+
 
 ```xml
-
+<?xml version='1.0' encoding='utf-8'?>
+<tomcat-users>
+<!--
+  <role rolename="tomcat"/>
+  <role rolename="role1"/>
+  <user username="tomcat" password="<must-be-changed>" roles="tomcat"/>
+  <user username="both" password="<must-be-changed>" roles="tomcat,role1"/>
+  <user username="role1" password="<must-be-changed>" roles="role1"/>
+-->
+</tomcat-users>
 ```
 
+
 * Web应用配置: `tomcat/conf/web.xml`
-    - 该配置文件需要参考Servlet规范, 以下参考自Servlet 3.0规范, 参见[官方文档](https://docs.oracle.com/cd/E24329_01/web.1211/e21049/web_xml.htm#WBAPP502)\
+    - 该配置文件需要参考Servlet规范, 以下参考自Servlet 3.0规范, 参见[官方文档](https://docs.oracle.com/cd/E24329_01/web.1211/e21049/web_xml.htm#WBAPP502)
     - Listener, Filter, Servlet等配置的加载顺序:
         - 与`web.xml`中声明的顺序无关
         - 加载顺序为: `context-param -> Listener -> Filter -> Servlet`
-    - 标签:(必选使用粗体)
-        - **`<web-app>`**: 根标签
+    - 标签:
+        - `<web-app>`: **必选**. 根标签
             - 属性
                 - 命名空间
                 - Schema约束地址
-                - **version**: Servlet版本
+                - version: **必选**. Servlet版本
             - 内部标签:
                 - `<display-name>`: 指定web应用的显示名称, 可以显示在图形化工具中
                 - `<description>`: 提供web应用的描述信息
@@ -221,25 +252,25 @@ project/
                         - `<description>`: 参数描述
                 - `<filter>`: 定义过滤器类和初始化属性
                     - 内部标签:
-                        - **`<filter-name>`**: 过滤器名称, 用于在其他地方引用
+                        - `<filter-name>`: **必选**. 过滤器名称, 用于在其他地方引用
                         - `<display-name>`: 过滤器显示名称, 可显示在图形化工具中
                         - `<description>`: 过滤器的描述信息
-                        - **`<filter-class>`**: 过滤器的全类名
+                        - `<filter-class>`: **必选**. 过滤器的全类名
                         - `<init-param>`: 过滤器初始化所用的键值对配置, 一个键值对使用一个`<init-param>`标签
                             - 内部标签:
                                 - `<param-name>`: 参数名
                                 - `<param-value>`: 参数值
                 - `<filter-mapping>`: 定义过滤器映射
                     - 内部标签:
-                        - **`<filter-name>`**: 映射URL或Servlet到哪一个过滤器, 通过该名称引用过滤器的声明
-                        - **`<url-pattern>`**: 触发该过滤器的URL模板. 如果使用`<servlet>`标签, 则该标签不是必选
-                        - **`<servlet>`**: 触发该过滤器的Servlet. 如果使用`<url-pattern>`标签, 则该标签不是必选
+                        - `<filter-name>`: **必选**. 映射URL或Servlet到哪一个过滤器, 通过该名称引用过滤器的声明
+                        - `<url-pattern>`: **必选**. 触发该过滤器的URL模板. 如果使用`<servlet>`标签, 则该标签不是必选
+                        - `<servlet>`: **必选**. 触发该过滤器的Servlet. 如果使用`<url-pattern>`标签, 则该标签不是必选
                 - `<listener>`: 定义监听器
                     - 内部标签:
                         - `<listener-class>`: 监听器类的全名
                 - `<servlet>`: 定义Servlet
                     - 内部标签:
-                        - **`<servlet-name>`**: Servlet名称, 用于在其他地方引用
+                        - `<servlet-name>`: **必选**. Servlet名称, 用于在其他地方引用
                         - `<display-name>`: Servlet显示名称, 可显示在图形化工具中
                         - `<description>`: Servlet的描述信息
                         - `<servlet-class>`: Servlet的全类名
@@ -252,15 +283,15 @@ project/
                         - `<run-as>`: 指定执行web应用的角色
                 - `<servlet-mapping>`: 定义URL映射到哪个Servlet
                     - 内部标签:
-                        - **`<servlet-name>`**: 映射URL的Servlet名称, 与Servlet声明的名称要对应
-                        - **`<url-pattern>`**: 触发Servlet的URL模板
+                        - `<servlet-name>`: **必选**. 映射URL的Servlet名称, 与Servlet声明的名称要对应
+                        - `<url-pattern>`: **必选**. 触发Servlet的URL模板
                 - `<session-config>`: 定义web应用的session属性
                     - 内部标签:
                         - `session-timeout>`: 定义session的过期时间, 单位是分钟
                 - `<mime-mapping>`: 定义扩展名和mime类型的映射关系
                     - 内部标签:
-                        - **`<extension>`**: 扩展名的字符串, 不包含`.`
-                        - **`<mime-type>`**: mime类型字符串
+                        - `<extension>`: **必选**. 扩展名的字符串, 不包含`.`
+                        - `<mime-type>`: **必选**. mime类型字符串
                 - `<welcom-file-list>`: 当URL请求的是目录名时, 会从该配置中的列表中寻找可访问的文件
                     - 内部标签:
                         - `<welcome-file>`: 作为默认欢迎文件的文件名
@@ -268,14 +299,14 @@ project/
                     - 内部标签:
                         - `<error-code>`: HTTP错误码
                         - `<exception-type>`: 异常的全类名. 如果设置了该项, 则不能设置`<error-code>`
-                        - **`<location>`**: 错误页面的文件路径
+                        - `<location>`: **必选**. 错误页面的文件路径
                 - `<jsp-config>`: 提供JSP文件的全局配置
                     - 内部标签:
-                        - **`<taglib>`**: 提供JSP页面使用的标签库信息
+                        - `<taglib>`: **必选**. 提供JSP页面使用的标签库信息
                             - 内部标签:
                                 - `<taglib-location>`: 提供相对于web项目根目录的标签库描述符的相对路径. 通常将其放在`WEB-INF`目录是最好的, 这样可以避免被直接访问到
                                 - `<taglib-uri>`: 提供标签库相对于`web.xml`文件的相对路径
-                        - **`<jsp-property-group>`**: 使用一组文件作为全局属性
+                        - `<jsp-property-group>`: **必选**. 使用一组文件作为全局属性
                             - 内部标签:
                                 - `<el-ignored>`: 是否忽略EL表达式. Servlet 2.4及以上是禁用的
                                 - `<scripting-invalid>`: 脚本元素是否在JSP中无效. 默认是有效的
@@ -285,27 +316,27 @@ project/
                                 - `<include-coda>`: 在尾标签中引入的文件路径
                                 - `<deferred-syntax-allowed-as-literal>`: 是否将`#{`作为字符串
                                 - `<trim-directive-whitespaces>`: 是否将模板文本中的空白字符去掉
-                                - **`<url-pattern>`**: 匹配的URL模板
+                                - `<url-pattern>`: **必选**. 匹配的URL模板
                                 - `<default-content-type>`: 指定默认的`contentType`属性
                                 - `<buffer>`: 指定JspWriter默认的缓冲模型
                                 - `<error-on-undeclared-namespace>`: 是否在使用未声明的标签时报错
                 - `<resource-env-ref>`: 定义与web应用相关的资源环境引用
                     - 内部标签:
-                        - **`<resource-env-ref-name>`**: 指定资源环境引用的名称
-                        - **`<resource-env-ref-type>`**: 指定资源环境引用的类型
+                        - `<resource-env-ref-name>`: **必选**. 指定资源环境引用的名称
+                        - `<resource-env-ref-type>`: **必选**. 指定资源环境引用的类型
                         - `<lookup-name>`: 解析资源引用的JNDI名称
                 - `<resource-ref>`: 定义外部资源的引用查询名称
                     - 内部标签:
-                        - **`<res-ref-name>`**: JNDI树使用的资源名称
-                        - **`<res-type>`**: 与引用名称对应的Java类型的全类名
-                        - **`<res-auth>`**: 控制资源的安全访问. 设置为`APPLICATION`则当前应用的代码可以访问资源, 设置为`Container`则服务器使用`login-config`元素的配置
+                        - `<res-ref-name>`: **必选**. JNDI树使用的资源名称
+                        - `<res-type>`: **必选**. 与引用名称对应的Java类型的全类名
+                        - `<res-auth>`: **必选**. 控制资源的安全访问. 设置为`APPLICATION`则当前应用的代码可以访问资源, 设置为`Container`则服务器使用`login-config`元素的配置
                         - `<res-sharing-scope>`: 指定资源共享范围. 可选值为`Shareable`, `Unshareable`
                         - `<lookup-name>`: 解析资源引用的JNDI名称
                 - `<security-constraint>`: 定义了`<web-resource-collection>`中资源的访问权限
                     - 内部标签:
-                        - **`<web-resource-collection>`**: 定义应用何种安全约束
+                        - `<web-resource-collection>`: **必选**. 定义应用何种安全约束
                             - 内部标签:
-                                - **`<web-resource-name>`**: web资源集合的名称
+                                - `<web-resource-name>`: **必选**. web资源集合的名称
                                 - `<url-pattern>`: 对哪个URL应用安全约束
                                 - `<http-method>`: 对哪种HTTP方法应用安全约束
                         - `<auth-constraint>`: 定义哪个组具有访问资源的权限
@@ -313,38 +344,38 @@ project/
                                 - `<role-name>`: 定义何种角色可以访问资源
                         - `<user-data-constraint>`: 定义客户端如何同服务端通信
                             - 内部标签:
-                                - **`<transport-guarantee>`**: 指定客户端和服务端的通信. 可选值为`NONE`, `INTERGRAL`, `CONFIDENTIAL`
+                                - `<transport-guarantee>`: **必选**. 指定客户端和服务端的通信. 可选值为`NONE`, `INTERGRAL`, `CONFIDENTIAL`
                 - `<login-config>`: 定义用户如何验证
                     - 内部标签:
                         - `<auth-method>`: 指定验证方式. 默认为`BASIC`表示使用浏览器验证方式, `FORM`表示使用HTML表单, `CLIENT-CERT`. 可以使用多种方式, 用逗号隔开
                         - `<realm-name>`: 验证用户信息的域的名
                         - `<form-login-config>`: 如果`<auth-method>`使用`FORM`, 则需要设置该项
                             - 内部标签:
-                                - **`<form-login-page>`**: 相对于文档根目录的登录页面的路径, 可以是HTML页面, JSP页面, Servlet
-                                - **`<form-error-page>`**: 相对于文档根目录的错误页面的路径, 用于在登录失败时显示
+                                - `<form-login-page>`: **必选**. 相对于文档根目录的登录页面的路径, 可以是HTML页面, JSP页面, Servlet
+                                - `<form-error-page>`: **必选**. 相对于文档根目录的错误页面的路径, 用于在登录失败时显示
                 - `<security-role>`: 定义角色
                     - 内部标签:
-                        - **`<role-name>`**: 角色名称.
+                        - `<role-name>`: **必选**. 角色名称.
                 - `<env-entry>`: 声明应用的环境入口
                     - 内部标签:
-                        - **`<env-entry-name>`**: 环境入口名称
-                        - **`<env-entry-value>`**: 环境入口值
-                        - **`<env-entry-type>`**: 环境入口类型. 可设置为以下Java类: `java.lang.Boolean`, `java.lang.String`, `java.lang.Integer`, `java.lang.Double`, `java.lang.Float`
+                        - `<env-entry-name>`: **必选**. 环境入口名称
+                        - `<env-entry-value>`: **必选**. 环境入口值
+                        - `<env-entry-type>`: **必选**. 环境入口类型. 可设置为以下Java类: `java.lang.Boolean`, `java.lang.String`, `java.lang.Integer`, `java.lang.Double`, `java.lang.Float`
                         - `<lookup-name>`: 解析资源引用的JNDI名称
                 - `<ejb-ref>`: 定义EJB资源
                     - 内部标签:
-                        - **`<ejb-ref-name>`**: web应用中使用的EJB名称
-                        - **`<ejb-ref-type>`**: EJB的全类名
-                        - **`<home>`**: EJB home接口的全类名
+                        - `<ejb-ref-name>`: **必选**. web应用中使用的EJB名称
+                        - `<ejb-ref-type>`: **必选**. EJB的全类名
+                        - `<home>`: **必选**. EJB home接口的全类名
                         - `<ejb-link>`: ...
                         - `<run-as>`: 运行所使用的角色
                         - `<lookup-name>`: 解析资源引用的JNDI名称
                 - `<ejb-local-ref>`: 声明EJB本地home
                     - 内部标签:
-                        - **`<ejb-ref-name>`**: web应用中使用的EJB名称
-                        - **`<ejb-ref-type>`**: EJB的全类名
-                        - **`<local-home>`**: EJB本地home接口的全类名
-                        - **`<local>`**: EJB本地接口的全类名
+                        - `<ejb-ref-name>`: **必选**. web应用中使用的EJB名称
+                        - `<ejb-ref-type>`: **必选**. EJB的全类名
+                        - `<local-home>`: **必选**. EJB本地home接口的全类名
+                        - `<local>`: **必选**. EJB本地接口的全类名
                         - `<ejb-link>`: ...
                         - `<lookup-name>`: 解析资源引用的JNDI名称
 
