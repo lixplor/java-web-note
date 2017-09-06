@@ -55,75 +55,76 @@ JSP的生命周期和Servlet非常相似:
 
 ## JSP语法
 
+* `<%-- ... --%>`: JSP注释, 只在JSP源码中有, 在生成的Java类和HTML页面中没有
 * `<% ... %>`: 代码片段. 会作为service()方法的局部成员
+    - 示例: `<% int i= 0; Circle a = new Circle(2.0); %>`
 * `<%! ... %>`: 声明. 会作为类的成员
+    - 示例: `<%! int i= 0; Circle a = new Circle(2.0); %>`
 * `<%= ... %>`: 表达式. 会作为out.print()的输出对象
+    - 示例: `<%= i %>`, 显示i的值; `<%= new Date().toLocaleString() %>`, 显示当前时间
 * `<%@ ... %>`: 指令, 用于设置JSP页面属性
-    - `<%@ page ... %>`: 定义页面依赖属性
-        - 属性:
-            - `buffer`: 指定out对象使用缓冲区的大小
-            - `autoFlush`: 控制out对象的缓存区
-            - `contentType`: 指定当前JSP页面的MIME类型和字符编码
-            - `errorPage`: 指定当JSP页面发生异常时需要转向的错误处理页面
-            - `isErrorPage`: 指定当前页面是否可以作为另一个JSP页面的错误处理页面
-            - `extends`: 指定Servlet从哪一个类继承
-            - `import`: 导入要使用的Java类
-            - `info`: 定义JSP页面的描述信息
-            - `isThreadSafe`: 指定对JSP页面的访问是否为线程安全
-            - `language`: 定义JSP页面所用的脚本语言, 默认是Java
-            - `session`: 指定JSP页面是否使用session
-            - `isELIgnored`: 指定是否执行EL表达式
-            - `isScriptingEnabled`: 确定脚本元素能否被使用
-    - `<%@ include ... %>`: 包含其他文件
-        - `file`: 文件相对url地址
-    - `<%@ taglib ... %>`: 引入标签库的定义
-        - `uri`: 标签库的位置
-        - `prefix`: 标签库的前缀, 如`<s:scope>`
-* `<%-- ... --%>`: 注释, 在浏览器查看源代码时看不到
-
-### 代码片段
-
-```html
-<% 代码片段 %>
-
-<jsp:scriptlet>
-    代码片段
-</jsp:scriptlet>
-```
-
-### 声明
-
-```html
-<%! 声明; ... %>
-
-<%! int i= 0; Circle a = new Circle(2.0); %>
-```
-
-### 表达式
-
-```html
-<%= 表达式 %>
-
-<jsp:expression>
-    表达式
-</jsp:expression>
-
-<%= new Date().toLocaleString() %>
-```
-
-### 指令
-
-```html
-<%@ 指令 属性="属性值" %>
-```
+    - 格式: `<%@ 指令 属性="属性值" %>`
+    - 3种指令:
+        - `<%@ page ... %>`: 定义页面依赖属性
+            - 属性:
+                - `buffer`: 指定out对象使用缓冲区的大小. 默认8K
+                - `autoFlush`: 控制out对象的缓存区是否自动刷新. 默认true
+                - `contentType`: 指定浏览器显示当前JSP页面的MIME类型和字符编码
+                - `errorPage`: 指定当JSP页面发生异常时需要转向的错误处理页面
+                - `isErrorPage`: 指定当前页面是否可以作为另一个JSP页面的错误处理页面. 默认false
+                - `extends`: 指定JSP的Servlet从哪一个类继承. 默认继承HttpJspBase, 如要修改必须是HttpServlet或其子类
+                - `import`: 导入要使用的Java类
+                - `info`: 定义JSP页面的描述信息
+                - `isThreadSafe`: 指定对JSP页面的访问是否为线程安全
+                - `language`: 定义JSP页面所用的脚本语言. 默认是java
+                - `pageEncoding`: 设置文件保存到磁盘以及生成Servlet文件的字符编码
+                - `session`: 指定JSP页面是否可以直接使用session对象. 默认true
+                - `isELIgnored`: 指定是否忽略EL表达式. 默认false
+                - `isScriptingEnabled`: 确定脚本元素能否被使用
+        - `<%@ include ... %>`: 包含其他文件
+            - `file`: 文件相对路径url
+        - `<%@ taglib ... %>`: 引入标签库的定义
+            - `uri`: 标签库的URI路径
+            - `prefix`: 标签库的前缀, 如`<s:scope>`
 
 ### 中文编码
 
 ```html
-<!-- 添加在文件头部 -->
+<!--
+添加在文件头部
+language="java"                            声明当前JSP页面的脚本语言为java
+contentType="text/html; charset="UTF-8"    声明浏览器打开页面的字符集使用utf-8
+pageEncoding="UTF-8"                       声明该JSP文件保存到磁盘时的字符集使用utf-8
+-->
 <%@ page language="java" contentType="text/html; charset="UTF-8" pageEncoding="UTF-8" %>
 ```
 
+### JSP动作标签
+
+* 使用xml语法结构控制Servlet引擎
+* `<jsp:行为名称 属性="属性值" />`
+* 预定义行为标签:
+    - `<jsp:include page="被包含的资源地址" />`: 用于在当前页面中包含静态或动态资源
+    - `<jsp:useBean/>`: 寻找和初始化一个JavaBean组件
+    - `<jsp:setProperty/>`: 设置JavaBean组件的值
+    - `<jsp:getProperty/>`: 将JavaBean组件的值插入到output中
+    - `<jsp:forward page="转发页面地址"/>`: 将页面请求转发. 从一个JSP文件向另一个文件传递一个包含用户请求的request对象
+        - `<jsp:param value="键" name="值">`: 转发时传递的参数键值对
+    - `<jsp:plugin/>`: 用于在生成的HTML页面中包含Applet和JavaBean对象
+    - `<jsp:element/>`: 动态创建一 个XML元素
+    - `<jsp:attribute/>`: 定义动态创建的XML元素的属性
+    - `<jsp:body/>`: 定义动态创建的XML元素的主体
+    - `<jsp:text/>`: 封装模板数据
+* 指令和动作标签的区别
+    - 指令在编译时生效, 动作标签在请求处理阶段起作用
+
+### 静态包含和动态包含
+
+* 静态包含: 使用`<%@ include file="" %>`指令
+* 动态包含: 使用`<jsp:include page=""/>`动作标签
+* 两者区别:
+    - 静态包含会将被包含的JSP代码复制到当前JSP生成的Servlet类中, 最终都是一个类
+    - 动态包含会将被包含的JSP代码分别生成各自的Servlet类, 最终是多个类
 
 ### 控制流语句
 
@@ -200,38 +201,14 @@ switch(day) {
 ```
 
 
-## JSP动作标签
-
-* 使用xml语法结构控制Servlet引擎
-* `<jsp:行为名称 属性="属性值" />`
-* 预定义行为标签:
-    - `<jsp:include/>`: 用于在当前页面中包含静态或动态资源
-    - `<jsp:useBean/>`: 寻找和初始化一个JavaBean组件
-    - `<jsp:setProperty/>`: 设置JavaBean组件的值
-    - `<jsp:getProperty/>`: 将JavaBean组件的值插入到output中
-    - `<jsp:forward/>`: 从一个JSP文件向另一个文件传递一个包含用户请求的request对象
-    - `<jsp:plugin/>`: 用于在生成的HTML页面中包含Applet和JavaBean对象
-    - `<jsp:element/>`: 动态创建一个XML元素
-    - `<jsp:attribute/>`: 定义动态创建的XML元素的属性
-    - `<jsp:body/>`: 定义动态创建的XML元素的主体
-    - `<jsp:text/>`: 封装模板数据
-
-
 ## JSP的9个隐含对象
 
 * `request`: HttpServletRequest类的实例
 * `response`: HttpServletResponse类的实例
-* `out`: PrintWriter类的实例
+* `out`: JspWriter类的实例. 输出的流实际会通过Servlet中的`PrintWriter esponse.getWriter()`统一进行输出
 * `session`: HttpSession类的实例
 * `application`: ServletContext类的实例
 * `config`: ServletConfig类的实例
-* `pageContext`: PageContext类的实例, 提供对JSP页面所有对象以及命名空间的访问
-* `page`: 类似于`this`
+* `pageContext`: PageContext类的实例, 可以获取JSP页面的其他隐含对象, 也可以操作4个域对象
+* `page`: `this`, 就是当前JSP的Servlet的引用
 * `Exception`: Exception类的实例, 代表发生错误的JSP页面中对应的异常对象
-
-
-## 常见问题
-
-### 指令和动作标签的区别
-
-指令在编译时生效, 动作标签在请求处理阶段起作用

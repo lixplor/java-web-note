@@ -134,6 +134,8 @@ public class Hello extends HttpServlet {
     - `void removeAttribute(String name)`: 根据键删除键值对
 * 获取Cookie
     - `Cookie[] getCookies()`: 获取所有Cookie
+* 获取Session
+    - `HttpSession getSession()`: 获取当前请求中的Session
 
 ## HttpServletResponse
 
@@ -180,6 +182,76 @@ public class Hello extends HttpServlet {
     - 一次请求, 不会影响Request域对象
     - 地址栏url不变
 
+
+## 缓存会话
+
+* Cookie和Session的区别
+    - Cookie保存在客户端, Session保存在服务端
+    - Cookie保存的数据数量和大小受浏览器限制, Session保存的数据不受浏览器限制
+
+### Cookie
+
+* 作用: 将数据保存在客户端或浏览器
+* 默认情况下, 浏览器关闭Cookie就会销毁, 但可以设置Cookie的过期时间, 等超时后才删除
+* 浏览器能够保存的Cookie的大小和个数有限制
+* `Cookie`类
+    - 构造方法:
+        - `Cookie Cookie(String name, String value)`: 使用键值对创建一个Cookie
+    - 常用方法:
+        - `String getName()`: 获取Cookie的名称
+        - `String getValue()`: 获取Cookie的值
+        - `void setDomain(String pattern)`: 指定Cookie的有效域名.
+        - `void setPath(String uri)`: 指定访问哪个路径时才能获取到Cookie
+        - `void setMaxAge(int expire)`: 设置Cookie的有效时间, 单位为秒. 如果设置为0, 则相当于让浏览器删除当前的Cookie(有效路径必须一致), 刷新页面即可
+* 获取和设置Cookie的相关方法:
+    - 服务端向浏览器写入cookie: 使用Response对象
+        - `httpServletResponse.addCookie(Cookie cookie)`
+    - 服务端读取浏览器的cookie: 使用Request对象
+        - `httpServletRequest.getCookies()`
+* 常见应用场景
+    - 记住用户名
+    - 浏览记录
+
+
+* 查找指定键的Cookie工具类
+
+```java
+public class CookieUtils {
+
+    private CookieUtils() {}
+
+    public static Cookie getCookie(Cookie[] cookies, String name) {
+        if (cookies == null)
+            return null;
+        for (Cookie cookie : cookies) {
+            if (name.equals(cookie.getName()))
+                return cookie;
+        }
+        return null;
+    }
+}
+```
+
+
+### Session
+
+* Session是基于Cookie的
+* 作用: 将数据保存在服务端, 客户端或浏览器只保存一个与数据对应的sessionId
+* 一般保存用户的私有信息
+* 常见应用场景
+    - 保持用户登录状态
+    - 用户购物车
+* `HttpSession`类
+    - 获取Session
+        - `httpServletRequest.getSession()`: 获取当前请求中的session
+    - 获取Session信息
+        - `String getId()`: 获取Session ID
+    - 作为域对象存取数据
+        - `void setAttribute(String name, Object value)`: 保存数据键值对
+        - `Object getAttribute(String name)`: 根据键获取值
+        - `void removeAttribute(String name)`: 根据键删除键值对
+
+
 ## 域对象
 
 * 都内置了Map集合来存储数据
@@ -188,14 +260,16 @@ public class Hello extends HttpServlet {
 * 域对象使用原则: 能用作用域小的域对象, 就不用更大的域对象
 
 
-| 域对象       | 对应对象              | 作用域               | 生命周期开始     | 生命周期结束             | 备注 |
-|-------------|----------------------|---------------------|-----------------|-------------------------| - |
-| Application | `ServletContext`     | Web应用运行期间都有效 | Web应用加载时创建 | Web应用被移除或服务器关闭  | - |
-| Session     | `HttpSession`        | 在一次会话中有效      | 创建session      | session过期或被声明为失效 | - |
-| Request     | `HttpServletRequest` | 在当前请求中有效      | 接收到用户请求    | 处理完响应               | - |
-| Page        | `PageContext`        | 在当前JSP内有效       | JSP页面开始执行  | JSP页面执行完毕           | 仅对于JSP页面有效 |
+* JSP中的4个域对象
 
-* `ServletConfig`: 不是域对象. Servlet的配置对象
+| 域名称       | 对应对象      | 作用域             | 生命周期开始    | 生命周期结束           | 备注 |
+|-------------|--------------|-------------------|---------------|----------------------| - |
+|Application域|`ServletContext`| Web应用运行期间都有效| Web应用加载时创建|Web应用被移除或服务器关闭| - |
+|Session域|`HttpSession`| 在一次会话中有效|第一次调用getSession()|session过期(默认Tomcat设置30分钟); Session被声明为失效; 服务器非正常关闭(停电, 正常关闭Session会序列化到硬盘)|关闭浏览器默认会销毁Cookie, 可能导致保存SessionID的Cookie没有, 从而浏览器不会传递SessionID, 从而找不到Session中的信息. 注意此时Session并没有销毁, 只是找不到了|
+|Request域|`HttpServletRequest`| 在当前请求中有效 | 接收到用户请求 | 处理完响应 | - |
+|Page域| `PageContext` | 在当前JSP内有效 | JSP页面开始执行 | JSP页面执行完毕 | 仅对于JSP页面有效 |
+
+* `ServletConfig`: 不是域对象. 是Servlet的配置对象
     - 作用:
         - 用于获取Servlet名称, 初始化参数
     - 常用方法:
@@ -229,7 +303,34 @@ public class Hello extends HttpServlet {
         - `void setAttribute(String name, Object value)`: 保存数据键值对
         - `Object getAttribute(String name)`: 根据键获取值
         - `void removeAttribute(String name)`: 根据键删除键值对
-
+* `HttpSession`类
+    - 获取Session
+        - `httpServletRequest.getSession()`: 获取当前请求中的session
+    - 获取Session信息
+        - `String getId()`: 获取Session ID
+    - 作为域对象存取数据
+        - `void setAttribute(String name, Object value)`: 保存数据键值对
+        - `Object getAttribute(String name)`: 根据键获取值
+        - `void removeAttribute(String name)`: 根据键删除键值对
+* `PageContext`:
+    - 获取JSP中其他8个内置对象
+        - `JspWriter getOut()`: 获取out对象
+        - `Exception getException()`: 获取exception对象
+        - `Object getPage()`: 获取page对象
+        - `ServletRequest getRequest()`: 获取request对象
+        - `ServletResponse getResponse()`: 获取response对象
+        - `ServletConfig getServletConfig()`: 获取servletConfig对象
+        - `ServletContext getServletContext()`: 获取servletContext对象
+        - `HttpSession getSession()`: 获取session对象
+    - 向JSP的4个域对象中存取数据
+        - `void setAttribute(String name, Object value, int scope)`: 保存数据键值对, 同时指定保存到哪个域中, 值为PageContext类中的静态常量: `APPLICATION_SCOPE`, `SESSION_SCOPE`, `REQUEST_SCOPE`, `PAGE_SCOPE`
+        - `Object getAttribute(String name, int scope)`: 根据键获取值, 同时指定从哪个域中获取, 值为PageContext类中的静态常量: `APPLICATION_SCOPE`, `SESSION_SCOPE`, `REQUEST_SCOPE`, `PAGE_SCOPE`
+        - `void removeAttribute(String name, int scope)`: 根据键删除键值对, 同时指定从哪个域中删除, 值为PageContext类中的静态常量: `APPLICATION_SCOPE`, `SESSION_SCOPE`, `REQUEST_SCOPE`, `PAGE_SCOPE`
+        - `Object findAttribute(String name)`: 从4个域中查找对应的键值对, 查找域的顺序为PAGE, REQUEST, SESSION, APPLICATION
+    - 作为域对象存取数据
+        - `void setAttribute(String name, Object value)`: 保存数据键值对
+        - `Object getAttribute(String name)`: 根据键获取值
+        - `void removeAttribute(String name)`: 根据键删除键值对
 
 ## 功能
 
@@ -385,6 +486,40 @@ public void doGet(HttpServletRequest request, HttpServletResponse response) thro
 }
 ```
 
+### Session校验验证码
+
+* 步骤:
+    - 将生成的验证码保存到session中
+    - 在页面输入图片的验证码并提交表单
+    - 在Servlet中获取表单提交的验证码, 与session中保存的验证码对比是否一致
+    - 判断完毕后清空session保存的验证码, 避免影响以后的判断
+
+### Session保持用户登录状态
+
+* 步骤
+    - 用户先登录
+    - 登录成功后将用户对象保存在session中
+    - 访问其他网页时先获取session中的用户对象, 来保持登录状态; 如果session中没有, 则要求重新登录
+
+### Session实现购物车
+
+* 步骤
+    - session中键用来标识购物车, 值是保存商品的列表
+    - 点击加入购物车, 将商品对象保存到列表中
+    - 查看购物车, 获取session对象, 取出商品列表显示
+
+### Cookie实现浏览记录
+
+* 步骤:
+    - 用户点击商品后, 将商品ID保存到Cookie中
+    - Cookie中的值是一个商品ID列表字符串
+    - 点击下一个商品后, 判断该商品ID是否已经保存过
+        - 如果没有保存过, 则直接添加到商品ID列表开头
+        - 如果保存过, 则将该ID从之前保存的位置删除, 再将ID添加到列表开头
+    - 浏览记录中判断Cookie是否存在
+        - 如果不存在, 则提示没有浏览记录
+        - 如果存在, 则根据ID加载不同的商品
+
 ### referer防盗链判断
 
 referer为null, 地址栏输入的
@@ -396,7 +531,9 @@ referer为null, 地址栏输入的
     - 通过`response`对象的`sendRedirect(String url)`设置
     - 通过HTML页面的`<meta http-equiv="Refresh" content="秒数;url=跳转地址"`
 
-### 中文乱码处理
+
+
+## 中文乱码处理方法
 
 * Request获取的请求参数乱码
     - 针对GET请求:
@@ -429,54 +566,3 @@ referer为null, 地址栏输入的
         - Firefox浏览器:
             - 乱码原因: Firefox浏览器对于文件名使用Base64编码
             - 解决方式: 通过request对象获取`User-Agent`请求头, 判断是否包含`Firefox`字符串, 是则使用Base64对文件名进行编码
-
-
-## 缓存会话
-
-### Cookie
-
-* 作用: 将数据保存在客户端或浏览器
-* 默认情况下, 浏览器关闭Cookie就会销毁, 但可以设置Cookie的过期时间, 等超时后才删除
-* `Cookie`类
-    - 构造方法:
-        - `Cookie Cookie(String name, String value)`: 使用键值对创建一个Cookie
-    - 常用方法:
-        - `String getName()`: 获取Cookie的名称
-        - `String getValue()`: 获取Cookie的值
-        - `void setDomain(String pattern)`: 指定Cookie的有效域名.
-        - `void setPath(String uri)`: 指定访问哪个路径时才能获取到Cookie
-        - `void setMaxAge(int expire)`: 设置Cookie的有效时间, 单位为秒. 如果设置为0, 则相当于让浏览器删除当前的Cookie(有效路径必须一致), 刷新页面即可
-* 获取和设置Cookie的相关方法:
-    - 服务端向浏览器写入cookie: 使用Response对象
-        - `httpServletResponse.addCookie(Cookie cookie)`
-    - 服务端读取浏览器的cookie: 使用Request对象
-        - `httpServletRequest.getCookies()`
-* 常见应用场景
-    - 记住用户名
-    - 浏览记录
-
-
-* 查找指定键的Cookie工具类
-
-```java
-public class CookieUtils {
-
-    private CookieUtils() {}
-
-    public static Cookie getCookie(Cookie[] cookies, String name) {
-        if (cookies == null)
-            return null;
-        for (Cookie cookie : cookies) {
-            if (name.equals(cookie.getName()))
-                return cookie;
-        }
-        return null;
-    }
-}
-```
-
-
-### Session
-
-* 作用: 将数据保存在服务端, 客户端或浏览器只保存一个与数据对应的sessionId
-* 一般保存私有信息
