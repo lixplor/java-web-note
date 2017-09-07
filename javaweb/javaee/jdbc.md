@@ -362,3 +362,25 @@ public class JDBCUtil {
     }
 }
 ```
+
+
+## JDBC事务管理
+
+* `java.sql.Connection`可以对事务进行管理. 但注意事务管理仅限于同一个连接对象, 不同连接对象的事务不能一起管理
+    - `void setAutoCommit(boolean autoCommit)`: 设置该连接是否为自动提交模式. false可以关闭自动提交, 关闭后所有的SQL语句都会保存到该连接的事务中, 直到调用commit()或rollback()
+    - `void commit()`: 提交事务
+    - `void rollback()`: 回滚事务
+    - `void setTransactionIsolation(int level)`: 设置事务隔离级别
+        - 常量值:
+            - `TRANSACTION_READ_UNCOMMITTED`: 可以发生脏读, 不可重复读和虚读
+            - `TRANSACTION_READ_COMMITTED`: 不可以发生脏读, 可以发生不可重复读和虚读
+            - `TRANSACTION_REPEATABLE_READ`: 不可发生脏读和不可重复读, 可以发生虚读
+            - `TRANSACTION_SERIALIZABLE`: 不可以发生脏读, 不可重复读, 虚读
+* 一般在Service中对事务进行管理, 因为Service对应一组操作业务, 而DAO只是对数据库的单独操作
+* 使用ThreadLocal将Connection对象绑定到线程
+    - 对于Web开发, 由于每个请求都是单独的线程, 在一次请求中操作事务时需要使用同一个Connection对象, 所以可以使用ThreadLocal对象将当前线程的Connection对象保存, 使用Connection时再从ThreadLocal对象中取出即可
+    - ThreadLocal通常用来解决数据库连接和Session的管理问题
+* `java.lang.ThreadLocal`: 线程本地变量. 其中保存的变量会在其他线程中也创建副本, 相当于每个线程都用该一个该变量的副本. 内部是Map结构, key为当前线程对象, 值为要保存的值.
+    - `T get()`: 获取ThreadLocal中保存的值
+    - `set(T value)`: 向ThreadLocal中添加值
+    - `remove()`: 删除ThreadLocal中的值
