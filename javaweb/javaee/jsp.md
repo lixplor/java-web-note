@@ -212,3 +212,107 @@ switch(day) {
 * `pageContext`: PageContext类的实例, 可以获取JSP页面的其他隐含对象, 也可以操作4个域对象
 * `page`: `this`, 就是当前JSP的Servlet的引用
 * `Exception`: Exception类的实例, 代表发生错误的JSP页面中对应的异常对象
+
+
+## JSP的4个域对象
+
+参见servlet.md
+
+## EL表达式
+
+* 作用: 简化JSP代码, 减少`<%%>`
+* 语法: `${ EL表达式 }`
+* 功能
+    - 从JSP的4个域对象中获取数据: 当没有该值时返回空字符串`""`而不会返回null
+        - `${ pageScope.键 }`
+        - `${ requestScope.键 }`
+        - `${ sessionScope.键 }`
+        - `${ applicationScope.键 }`
+        - `$ { 键 }`: 类似于`findAttribute()`, 在四个域对象中寻找
+    - 获取值的值
+        - `[]`操作符: 可以操作数组, List集合, Map集合
+            - `${ 键[索引] }`: 如果通过键获取的值是一个数组或List集合, 则可以直接使用索引获取值
+            - `${ 键[Map的键] }`: 如果通过键获取的值是一个Map集合, 且Map的键中含有`.`, 则不能使用点操作符, 会引起歧义, 这种情况可以使用`[]`获取值
+        - `.`操作符: 可以操作Map集合, 对象
+            - `${ 键.Map的键 }`: 如果通过键获取的值是一个Map集合, 则可以使用`.`获取键对应的值
+            - `${ 键.对象的属性 }`: 如果通过键获取的值是一个对象, 则可以使用`.`获取属性值
+    - 执行运算
+        - 算数运算
+            - `${ i + j }`
+            - 如果有不存在的值参与运算, 也不会引发错误
+        - 比较运算
+            - `${ i < j }`
+            - `${ i lt j }`
+                - `lt`: `<`
+                - `gt`: `>`
+                - `le`: `<=`
+                - `ge`: `>=`
+                - `eq`: `=`
+            - `${ a < b? 1 : 0 }`: 三元运算符
+            - `${ empty 变量 }`: 判断变量是否为null, 结果为布尔值
+        - 逻辑运算
+            - `${ a < 0 && b > 0 }`
+    - 操作Web开发的常用对象(11个)
+        - 4个域对象
+            - `pageScope`
+            - `requestScope`
+            - `sessionScope`
+            - `applicationScope`
+        - 2个操作请求参数的对象
+            - `param`: 一个键对应一个值
+                - `${ param.参数的键 }`: 根据参数的键获取值
+            - `paramValues`: 一个键对应多个值
+                - `${ paramValues.参数的键[索引] }`: 根据参数的键获取多个值的数组, 并通过索引获取值
+        - 2个操作请求头的对象
+            - `header`: 一个键对应一个值
+                - `${ header.头的键 }`: 根据头的键获取值
+            - `headerValues`: 一个键对应多个值
+                - `${ headerValues.头的键[索引] }`: 根据头的键获取多个值的数组, 并通过索引获取值
+        - `initParam`: 获取全局初始化参数
+            - `${ initParam.键 }`
+        - `cookie`: Cookie
+            - `${ cookie.键 }`
+        - `pageContext`: pageContext对象
+            - `${ pageContext.其他域对象 }`: 获取其他域对象
+    - 调用Java的方法
+* pageScope和pageContext的区别
+    - pageScope只是代表域, 在JSP中只能用来获取域中的值
+    - pageContext除了以上功能, 还可以获取其他域对象
+
+
+## JSTL
+
+* JSTL: JSP Standard Tag Library, JSP标准标签库
+* 版本:
+    - 1.0: 不支持EL表达式
+    - 1.1, 1.2: 支持EL表达式
+* 标签库中的5类标签
+    - core: 核心标签
+        - `<c:set var="键" value="值" scope="域"></c:set>`: 将键值对设置到域中
+        - `<c:out value="值" default="默认值" escapeXml="是否转义XML或HTML标签字符"></c:out>`: 输出值
+        - `<c:if test="EL关系表达式">条件成立时的代码</c:if>`: 判断
+        - `<c:forEach></c:forEach>`: 遍历数组, List, Map
+            - 获取索引: `<c:forEach var="i" begin="开始值" end="结束值" step="每次递增量" varStatus="遍历状态对象变量名"></c:forEach>`
+                - 可以使用`varStatus`对象的2个属性:
+                    - `count`: 序号, 从1开始
+                    - `index`: 索引, 从0开始
+            - 遍历数组或List: `<c:forEach var="遍历出的元素变量" items="被遍历的数组或集合"></c:forEach>`
+            - 遍历Map: `<c:forEach var="entry" items="被遍历的Map"></c:forEach>`, 然后通过`entry.key`获取键, `entry.value`获取值
+    - fn: 函数标签, 包含EL函数库. 可以在EL表达式中直接使用函数, 而不用写成标签
+        - `${ fn:contains("字符串", "子字符串") }`: 判断字符串中是否包含子字符串
+        - `${ fn:length("字符串") }`: 获取字符串的长度
+        - `${ fn:toLowerCase("字符串") }`: 将字符串转为小写字母
+        - `${ fn:split("被拆的字符串", "标记") }`: 切分字符串
+    - fmt: 国际化标签
+    - xml: xml标签
+    - sql: sql标签
+* 使用JSTL:
+    - 导入以下依赖包:
+        - `jstl.jar`
+        - `standard.jar`
+    - 在JSP页面中引入JSTL标签库
+        - 示例:
+            - 引入核心库, `<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>`
+            - 引入函数库, `<%@ taglib uri="http://java.sun.com/jsp/jstl/functions" prefix="fn" %>`
+    - 在JSP标签中使用JSTL的标签
+        - `<标签前缀:标签 .../>`
