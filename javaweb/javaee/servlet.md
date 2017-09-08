@@ -531,6 +531,14 @@ referer为null, 地址栏输入的
     - 通过`response`对象的`sendRedirect(String url)`设置
     - 通过HTML页面的`<meta http-equiv="Refresh" content="秒数;url=跳转地址"`
 
+### 处理表单重复提交问题
+
+* 步骤
+    - JSP页面中使用UUID生成随机token放在session中
+    - 提交表单时将session中的token也提交, 可以做一个隐藏标签来存放
+    - 在Servlet中获取session中的token和表单参数的token, 然后将session中的token删除. 比较两个token是否一致
+        - 一致则执行操作
+        - 不一致则跳转其他页面
 
 
 ## 中文乱码处理方法
