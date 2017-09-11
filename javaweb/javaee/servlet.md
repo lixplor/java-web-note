@@ -250,6 +250,8 @@ public class CookieUtils {
         - `void setAttribute(String name, Object value)`: 保存数据键值对
         - `Object getAttribute(String name)`: 根据键获取值
         - `void removeAttribute(String name)`: 根据键删除键值对
+    - 销毁
+        - `void invalidate()`: 将session声明为无效
 
 
 ## 域对象
@@ -265,7 +267,7 @@ public class CookieUtils {
 | 域名称       | 对应对象      | 作用域             | 生命周期开始    | 生命周期结束           | 备注 |
 |-------------|--------------|-------------------|---------------|----------------------| - |
 |Application域|`ServletContext`| Web应用运行期间都有效| Web应用加载时创建|Web应用被移除或服务器关闭| - |
-|Session域|`HttpSession`| 在一次会话中有效|第一次调用getSession()|session过期(默认Tomcat设置30分钟); Session被声明为失效; 服务器非正常关闭(停电, 正常关闭Session会序列化到硬盘)|关闭浏览器默认会销毁Cookie, 可能导致保存SessionID的Cookie没有, 从而浏览器不会传递SessionID, 从而找不到Session中的信息. 注意此时Session并没有销毁, 只是找不到了|
+|Session域|`HttpSession`| 在一次会话中有效|第一次调用getSession()方法(访问JSP会调用因为有内置对象)|session过期(默认Tomcat设置30分钟); Session被声明为失效(调用invalidate()); 服务器非正常关闭(停电, 正常关闭Session会序列化到硬盘)|关闭浏览器默认会销毁Cookie, 可能导致保存SessionID的Cookie没有, 从而浏览器不会传递SessionID, 从而找不到Session中的信息. 注意此时Session并没有销毁, 只是找不到了|
 |Request域|`HttpServletRequest`| 在当前请求中有效 | 接收到用户请求 | 处理完响应 | - |
 |Page域| `PageContext` | 在当前JSP内有效 | JSP页面开始执行 | JSP页面执行完毕 | 仅对于JSP页面有效 |
 
@@ -331,6 +333,59 @@ public class CookieUtils {
         - `void setAttribute(String name, Object value)`: 保存数据键值对
         - `Object getAttribute(String name)`: 根据键获取值
         - `void removeAttribute(String name)`: 根据键删除键值对
+
+
+## 监听器
+
+* 主要用于监听3个域对象(ServletContext, HttpSession, ServletRequest)
+* 8个监听器
+    - 监听域对象的创建和销毁. 定义类实现接口, 并在web.xml中注册
+        - `ServletContextListener`: 用于加载框架配置文件, 定时任务
+            - `void contextInitialized(ServletContextEvent sce)`: ServletContext启动时调用
+            - `void contextDestroyed(ServletContextEvent sce)`: ServletContext销毁时调用
+        - `HttpSessionListener`:
+            - `void sessionCreated(HttpSessionEvent se)`: 当Session创建时调用
+            - `void sessionDestroyed(HttpSessionEvent se)`: 当Session销毁时调用
+        - `ServletRequestListener`:
+            - `void requestInitialized(ServletRequestEvent sre)`: 当ServletRequest对象初始化时调用
+            - `void requestDestroyed(ServletRequestEvent sre)`: 当ServletRequest对象销毁时调用
+    - 监听域对象的属性添加, 删除, 修改. 定义类实现接口, 并在web.xml中注册
+        - `ServletContextAttributeListener`
+            - `void attributeAdded(ServletContextAttributeEvent scab)`: 当属性添加到ServletContext时调用
+            - `void attributeRemoved(ServletContextAttributeEvent scab)`: 当属性从ServletContext删除时调用
+            - `void attributeReplaced(ServletContextAttributeEvent scab)`: 当ServletContext中的属性被修改时调用
+        - `HttpSessionAttributeListener`
+            - `void attributeAdded(HttpSessionBindingEvent se)`: 当属性添加到session时调用
+            - `void attributeRemoved(HttpSessionBindingEvent se)`: 当属性从session删除时调用
+            - `void attributeReplaced(HttpSessionBindingEvent se)`: 当session中的属性被修改时调用
+        - `ServletRequestAttributeListener`
+            - `void attributeAdded(ServletRequestAttributeEvent srae)`: 当属性添加到request时调用
+            - `void attributeRemoved(ServletRequestAttributeEvent srae)`: 当属性从request删除时调用
+            - `void attributeReplaced(ServletRequestAttributeEvent srae)`: 当request中的属性被修改时调用
+    - 监听HttpSession中的JavaBean的状态改变(绑定(将JavaBean存入session), 解除绑定(将JavaBean从session中删除), 钝化(序列化到磁盘), 活化(从磁盘反序列化)). 让JavaBean实现接口, 而不用配置到web.xml中
+        - `HttpSessionBindingListener`
+            - `void valueBound(HttpSessionBindingEvent event)`: 当对象绑定到session时调用
+            - `void valueUnbound(HttpSessionBindingEvent event)`: 当对象从session解绑时调用
+        - `HttpSessionActivationListener`
+            - `void sessionDidActivate(HttpSessionEvent se)`: 当session活化时调用
+            - `void sessionWillPassivate(HttpSessionEvent se)`: 当session钝化时调用
+
+* 在web.xml中配置监听器
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app ...>
+    ...
+    <listener>
+        <listener-class>监听器全类名</listener-class>
+    </listener>
+</web-app>
+```
+
+
+## 过滤器
+
+
 
 ## 功能
 

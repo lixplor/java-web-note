@@ -393,6 +393,27 @@ project/
 </web-app>
 ```
 
+## Session优化配置
+
+* 使用`<Context>`标签配置定时session序列化
+* 3种配置方式:
+    - 在`tomcat/conf/context.xml`中配置`<Context>`
+        - tomcat中所有的虚拟主机和虚拟路径都会按照此配置执行
+    - 在`tomcat/conf/Catalina/localhost/context.xml`中配置`<Context>`
+        - tomcat中的localhost虚拟主机中的所有虚拟路径都按此配置执行
+    - 在当前工程下的`META-INF/context.xml`中配置`<Context>`
+        - 仅当前工程按此配置执行
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<Context>
+    <!-- maxIdleSwap: session序列化到磁盘的间隔分钟数  directory: 序列化后存放的目录, 在项目目录下 -->
+    <Manager className="org.apache.catalina.session.PersistentManager" maxIdleSwap="1">
+        <Store className="org.apache.catalina.session.FileStore" directory="dir"/>
+    </Manager>
+</Context>
+```
+
 
 ## 日志文件
 
@@ -403,6 +424,8 @@ project/
     - `manager.yyyy-MM-dd.log`: Tomcat自带管理页面日志
     - `localhost.yyyy-MM-dd.log`: 本机的一些异常日志
     - `localhost_access_log.yyyy-MM-dd.txt`: Web服务访问日志
+
+
 
 ## 项目发布和虚拟目录映射
 
