@@ -264,7 +264,13 @@ project/
                     - 内部标签:
                         - `<filter-name>`: **必选**. 映射URL或Servlet到哪一个过滤器, 通过该名称引用过滤器的声明
                         - `<url-pattern>`: **必选**. 触发该过滤器的URL模板. 如果使用`<servlet>`标签, 则该标签不是必选
-                        - `<servlet>`: **必选**. 触发该过滤器的Servlet. 如果使用`<url-pattern>`标签, 则该标签不是必选
+                        - `<servlet-name>`: **必选**. 触发该过滤器的Servlet. 如果使用`<url-pattern>`标签, 则该标签不是必选
+                        - `<dispatcher>`: 设置过滤器的有效范围. 可以配置多个标签实现拦截多个范围
+                            - 取值
+                                - `REQUEST`: 默认. 请求
+                                - `FORWARD`: 转发
+                                - `INCLUDE`: 包含
+                                - `ERROR`: 错误页面跳转(全局错误页面)
                 - `<listener>`: 定义监听器
                     - 内部标签:
                         - `<listener-class>`: 监听器类的全名

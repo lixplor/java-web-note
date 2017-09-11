@@ -46,7 +46,7 @@ Servlet接口
         - 在`WEB-INF`中创建`web.xml`
         - 注册Servlet: `<servlet>`
         - 映射url: `<servlet-mapping>`
-    - 访问URL: `http"//IP:端口号/项目名/Servlet映射的URL`
+    - 访问URL: `http://IP:端口号/项目名/Servlet映射的URL`
 
 ```java
 public class Hello extends HttpServlet {
@@ -385,9 +385,126 @@ public class CookieUtils {
 
 ## 过滤器
 
+* 用于过滤客户端向服务器发送的请求和响应, 进行一些处理
+* 过滤器的生命周期
+    - 创建: 服务器启动时创建过滤器
+    - 销毁: 服务器关闭时销毁过滤器
+* `javax.servlet.Filter`接口
+    - `void init(FilterConfig config)`: 当过利器初始化时调用
+    - `void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)`: 每次请求时调用
+    - `void destroy()`: 当过滤器销毁时调用
+* `javax.servlet.FilterChain`接口
+    - `void doFilter(ServletRequest request, ServletResponse response)`: 传递请求和响应到下一个过滤器, 如果后面没有过滤器, 则传递到请求的资源(Servlet或JSP)进行处理
+    - 注意:
+        - 过滤器链中的执行顺序:
+            - 先执行带有`<url-pattern>`的过滤器
+            - 再执行带有`<filter-name>`的过滤器
+            - 如果以上条件相同, 则按照web.xml中`<filter-mapping>`的配置顺序执行
+        - 过滤器链在过滤请求时经过的过滤器顺序和返回响应时经过的过滤器顺序相反
+* `javax.servlet.FilterConfig`接口
+    - `String getFilterName()`: 获取过滤器在web.xml中配置的名称
+    - `String getInitParameter(String name)`: 根据键获取初始化参数值, 如果没有则返回null
+    - `Enumeration getInitParameterNames()`: 获取初始化参数名的枚举
+    - `ServletContext getServletContext()`: 获取ServletContext对象
+
+
+* 在web.xml中配置过滤器
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app ...>
+    ...
+    <filter>
+        <filter-name>过滤器名称</filter-name>
+        <filter-class>监听器全类名</filter-class>
+    </filter>
+    <filter-mapping>
+        <filter-name>过滤器名称</filter-name>
+        <url-pattern>使用过滤器的URL路径</url-pattern>
+    </filter-mapping>
+</web-app>
+```
+
+
+## Servlet 3.0
+
+* Servlet 3.0相对于2.5的区别:
+    - 支持注解开发, 可以替代web.xml
+    - 支持文件上传
+    - 支持异步请求
+* Tomcat 7及以上版本支持Servlet 3.0
+* 使用注解代替web.xml
+    - `@WebServlet()`: 注解当前类为一个Servlet
+        - 注解的属性
+            - `urlPatterns="URL路径"`: 匹配该Servlet的URL路径
+            - `loadOnStartup=优先级数字`: 启动优先级
+            - `initParams={@WebInitParam注解的参数元素}`: 初始化参数
+                - `@WebInitParam(name="键", value="值")`: 参数键值对
+            - `asyncSupported=布尔值`: 是否支持异步请求
+    - `@WebListener`: 注解当前类为一个Listener
+    - `@WebFilter()`: 注解当前类为一个Filter
+        - 注解的属性
+            - `urlPatterns="URL路径"`: 匹配该过滤器的URL路径
+            - `asyncSupported=布尔值`: 是否支持异步请求
+    - `@MultipartConfig`: 注解当前Servlet支持文件上传API
+* Servlet 3.0中新增API
+    - `HttpServletRequest`中新增
+        - `Part getPart(String name)`: 获取文件上传部分的内容
+        - `AsyncContext startAsync(ServletRequest req, ServletResponse resp)`: 获取异步请求上下文
+    - `Part`
+        - `String getName()`: 获取name属性值
+        - `String getHeader(String name)`: 获取指定头的值
+        - `long getSize()`: 获取上传的文件的大小
+        - `InputStream getInputStream()`: 获取上传文件输入流
+    - `AsyncContext`
+        - `start(Runnable r)`: 启动异步任务
+        - `ServletRequest getRequest()`: 获取请求对象
+        - `ServletResponse getResponse()`: 获取响应对象
+
+
+```java
+
+```
 
 
 ## 功能
+
+### 抽取Servlet基类
+
+* 原理:
+    - 抽取基类获取请求参数, 请求参数中带有调用方法的名称
+    - 子类继承基类, 定义特有方法, 返回值为要转发的页面路径
+    - 基类通过反射调用子类方法, 实现不同请求由不同Servlet处理的目录, 并将返回的路径进行转发
+
+```java
+// Servlet基类. 通过参数调用子类方法, 通过子类方法返回值转发到相应的页面
+public class BaseServlet extends HttpServlet {
+
+    @Override
+    protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        // TODO 注意需要处理参数和响应乱码
+        // 获取行为参数
+        String methodName = req.getParameter("method");
+        // 判断是否传递了参数
+        if (methodName == null || "".equals(methodName)) {
+            // TODO 没有传递, 跳转特殊页面或给出提示
+            return;
+        }
+        // 通过反射调用子类方法
+        Class clazz = this.getClass();
+        try {
+            Method method = clazz.getMethod(methodName, HttpServletRequest.class, HttpServletResponse.class);
+            String path = (String) method.invoke(this, req, resp);
+            // 转发路径
+            if (path != null) {
+                req.getRequestDispatcher(path).forward(req, resp);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+```
 
 ### 登录流程
 
@@ -609,6 +726,56 @@ referer为null, 地址栏输入的
     - 第一页不应该再查上一页, 最后一页不应该再查下一页
     - 根据当前页号计算当前页第一条数据的序号: `(当前页号 - 1) * 页面条目数`
 
+### 记住用户并自动登录
+
+* 步骤
+    - 在登录表单中添加记住用户复选框
+    - 在Servlet中判断是否需要自动登录
+        - 否, 则不处理
+        - 是, 则创建Cookie, 存储用户名和密码, 并设置Cookie的有效路径和时长, 并添加到response中返回
+    - 创建Filter过滤登录页面的请求
+        - 先判断session中是否有用户信息
+            - 有, 已经可以登录, 放行走正常流程
+            - 无, 则取出请求中的Cookie, 查看是否有用户登录信息
+                - 无, 说明没有记住用户信息, 直接放行走正常流程
+                - 有, 说明记住了用户信息
+                    - 到数据库中验证用户信息是否存在
+                        - 不存在, 说明没有该用户, 放行走正常流程
+                        - 存在, 将用户信息存入session, 进入已登录状态, 放行
+
+### 文件上传
+
+* 实现方案
+    - Servlet 3.0自带
+    - JSPSmartUpload
+    - Apache FileUpload
+    - 框架自带
+* 文件上传必要要求
+    - 表单提交方式为POST
+    - 表单中有文件上传标签, 并有name属性且有值: `<input type="file" name="upload"/>`
+    - 表单的`enctype`属性值必须是`multipart/form-data`
+* 文件存储目录分离
+    - 目录中文件过大时读写效率低
+    - 分离方式:
+        - 按时间分: 每天, 每周, 每月一个目录
+        - 按数量分: 每N个文件一个目录
+        - 按用户分: 每个用户一个目录
+
+### 字符编码集过滤器处理请求和响应乱码
+
+* 原理:
+    - 请求: 继承HttpServletRequestWrapper, 利用装饰模式增强request的getParameter()方法, 增加字符集转换
+    - 响应: 继承HttpServletResponseWrapper, 利用装饰模式增强response的方法, 添加字符集转换
+* 步骤
+    - 定义类继承HttpServletRequestWrapper
+        - 定义构造方法, 传入ServletRequest对象, 用于增强
+        - 重写`String getParameter(String name)`方法
+            - 调用`request.getMethod()`获取请求方法
+                - 如果是GET请求, 则获取值转换编码并返回, `return new String(request.getParameter(name).getBytes("IOS-8859-1"), "utf-8");`
+                - 如果是POST请求, 调用`request.setCharacterEncoding("utf-8");`, 并返回`super.getParameter(name)`
+        - 其他获取参数的方法也可用类似方法增强
+    - 定义类实现Filter接口, 在`doFilter()`方法中创建上面自定义类的对象, 传入request对象进行增强, 然后调用`chain.doFilter(增强request对象, resp)`传递增强后的request
+
 
 ## 中文乱码处理方法
 
@@ -643,3 +810,4 @@ referer为null, 地址栏输入的
         - Firefox浏览器:
             - 乱码原因: Firefox浏览器对于文件名使用Base64编码
             - 解决方式: 通过request对象获取`User-Agent`请求头, 判断是否包含`Firefox`字符串, 是则使用Base64对文件名进行编码
+* 以上方式可以利用Filter统一对请求和响应进行处理
