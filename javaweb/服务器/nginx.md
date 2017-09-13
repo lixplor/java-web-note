@@ -28,22 +28,30 @@ Load balance, 建立在现有网络结构之上, 提供一种廉价, 有效, 透
 * `nginx/conf/nginx.conf`
 
 ```shell
-# 服务器列表(lb=load balance)
+# 配置反向代理中上游服务器列表(名字自己取, lb=load balance)
 upstream server_lb {
-    server localhost:8080;
-    server localhost:8081;
+    # 格式: server IP:端口号 weight=权重值;
+    server localhost:8080 weight=5;  
+    server localhost:8081 weight=5;
+    #ip_hash;  # 配置同一个IP只会访问同一个服务器, 可用于session共享
 }
 
+# 配置Nginx服务器
 server {
+    # 默认端口号
     listen       80;
+    # 服务器名称
     server_name  localhost;
 
+    # 路由配置(/表示当访问根路径时的配置)
     location / {
         root        html;
+        # 反向代理服务器URL
         proxy pass  http://server_lb;
         index       index.html index.htm;
     }
 
+    # Nginx默认的错误处理页面
     error_page 500 502 503 504  /50x.html;
     location = /50x.html {
         root html;
@@ -51,10 +59,21 @@ server {
 }
 ```
 
-* `upstream`
-* `weight`
 
 ## 搭建集群
 
 * 利用Nginx转发请求到多个Tomcat实例
-* 开启Tomcat的Cluster配置
+
+
+## 集群架构的Session共享
+
+* 用户登录后的状态应该不会因为集群服务器不同而导致Session不同, 所以需要在各个服务器中都使用相同的session
+* 共享session的几种方式:
+    - 同一个session只访问同一个服务器
+        - 在nginx配置文件中的`upstream`中, 添加`ip_hash;`选项, 这样同一个IP只会访问同一个服务器
+    - redis存储session
+    - tomcat广播机制
+        - 修改tomcat的`server.xml`, 打开集群配置`<Cluster className="org.apache.catalina.ha.tcp.SimpleTcpCluster"/>`
+        - 修改项目的`web.xml`, 添加`<distributable/>`标签
+        - 在此标签中, 只要`<Membership>`中有相同的`address`和`port`, 则会被分配到同一个集群中, 共享session.
+        - 同一个session被称为一个cluster, 可以有多个cluster
