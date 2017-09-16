@@ -725,6 +725,13 @@ referer为null, 地址栏输入的
 * 注意
     - 第一页不应该再查上一页, 最后一页不应该再查下一页
     - 根据当前页号计算当前页第一条数据的序号: `(当前页号 - 1) * 页面条目数`
+* 分页一般定义一个JavaBean, 而不是一个List
+    - 属性:
+        - Integer currentPage: 当前页
+        - Integer pageSize: 每页显示记录数
+        - Integer totalCount: 总记录数
+        - Integer totalPage: 总页数
+        - List<T> list: 当前页数据
 
 ### 用户注册激活码激活流程
 
