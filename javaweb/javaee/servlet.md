@@ -694,7 +694,12 @@ public void doGet(HttpServletRequest request, HttpServletResponse response) thro
 
 ### referer防盗链判断
 
-referer为null, 地址栏输入的
+* referer头可以显示当前请求的来源
+    - 如果是浏览器直接输入的地址, 则referer头为null
+    - 如果是其他页面跳转过来的, 则referer头的值是该页面
+    - 可以通过判断请求中referer头的值是否属于我方资源服务器的地址来判断是否有盗链请求
+        - 如果是我方服务器, 则允许请求
+        - 如果不是我方服务器, 则拒绝请求
 
 ### 控制页面自动跳转
 
