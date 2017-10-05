@@ -14,35 +14,55 @@
 ### 添加依赖包
 
 * jar包方式
-    - 在`WEB-INF/lib`下, 加入Hibernate的`require/*`, `log4j`, `slf4`
+    - 在`WEB-INF/lib`下, 加入Hibernate的`require/*`, `log4j`, `slf4j`
+    - 注意hibernate依赖于Log4J, slf4j, 不要忘记导包
+* maven方式
+
+```xml
+<dependencies>
+    <!-- Hibernate -->
+    <dependency>
+        <groupId>org.hibernate</groupId>
+        <artifactId>hibernate-core</artifactId>
+        <version>5.2.11.Final</version>
+    </dependency>
+
+    <!-- Log4J -->
+    <dependency>
+        <groupId>log4j</groupId>
+        <artifactId>log4j</artifactId>
+        <version>1.2.16</version>
+    </dependency>
+
+    <!-- SLF4J -->
+    <dependency>
+        <groupId>org.slf4j</groupId>
+        <artifactId>slf4j-nop</artifactId>
+        <version>1.6.4</version>
+    </dependency>
+<dependencies>
+```
 
 
-## 快速入门
+## 配置文件
 
-### JavaBean与数据库表的映射
-
-(可选)创建JavaBean: 如`User.java`
-    - 基本类型使用包装类, 因为默认值是`null`, 有助于判断
-    - xml也可以自动生成JavaBean
-
-
-创建映射文件: 创建与JavaBean同名的xml, 如`User.hbm.xml`(hbm = hibernate mapping)
-* `<class>`标签: 将类与数据库表建立映射关系
-    - `name`: 类的完整路径
-    - `table`: 表名(如果类名和表名一致, 则可以省略该属性)
-    - `catalog`: 数据库名称(如果配置了则可以省略)
-* `<id>`标签: 将类中的属性与表中的主键建立映射, id标签用于配置主键
-    - `name`: 属性名
-    - `column`: 表中字段名(如果类中属性名和表中字段名一致, 则可以省略)
-    - `length`: 字段的长度, 如果数据库已经建好, 则可以省略. 如果没有建好数据库, 最好指明
-* `<property>`标签: 将类中的普通属性与表中的字段建立映射
-    - `name`: 类中属性名
-    - `column`: 表中字段名
-    - `length`: 数据长度
-    - `type`: java/hibernate数据类型
-        - Hibernate: `string`
-        - Java: `java.lang.String`
-    - `sql-type`: sql数据类型
+* 对象关系映射文件: 创建与JavaBean同名的xml, 如`User.hbm.xml`(hbm = hibernate mapping)
+    - `<class>`标签: 将类与数据库表建立映射关系
+        - `name`: 类的完整路径
+        - `table`: 表名(如果类名和表名一致, 则可以省略该属性)
+        - `catalog`: 数据库名称(如果配置了则可以省略)
+    - `<id>`标签: 将类中的属性与表中的主键建立映射, id标签用于配置主键
+        - `name`: 属性名
+        - `column`: 表中字段名(如果类中属性名和表中字段名一致, 则可以省略)
+        - `length`: 字段的长度, 如果数据库已经建好, 则可以省略. 如果没有建好数据库, 最好指明
+    - `<property>`标签: 将类中的普通属性与表中的字段建立映射
+        - `name`: 类中属性名
+        - `column`: 表中字段名
+        - `length`: 数据长度
+        - `type`: java/hibernate数据类型
+            - Hibernate: `string`
+            - Java: `java.lang.String`
+        - `sql-type`: sql数据类型
 
 ```xml
 <?xml version"1.0" encoding="UTF-8"?>
@@ -61,16 +81,19 @@
 </hibernate-mapping>
 ```
 
-配置数据库连接
-放在`src`目录下, 名为`hibernate.cfg.xml`. 配置可参考官方样例
-* `property`
-    - `hibernate.hbm2dl,auto`
-        - `create-drop`: 重新创建表后再删除
-        - `create`: 重新创建表
-        - `update`: 更新已存在的表(开发中用这个)
-        - `validate`: 校验JavaBean和表字段是否一致
+* Hibernate核心配置文件: `hibernate.cfg.xml`
+    - `<property>`
+        - `hibernate.hbm2dl,auto`
+            - `create-drop`: 重新创建表后再删除
+            - `create`: 重新创建表
+            - `update`: 更新已存在的表(开发中用这个)
+            - `validate`: 校验JavaBean和表字段是否一致
 
 ```xml
+<?xml version"1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC
+    "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+    "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
 <hibernate-configuration>
     <!-- 必须先配置SessionFactory标签, 一个数据库对应一个sessionFactory标签 -->
     <session-factory>
@@ -95,62 +118,73 @@
 </hibernate-configuration>
 ```
 
-* 编写代码
+## 编写代码
+
+### 创建JavaBean
+
+* 创建JavaBean(可选): 如`User.java`
+    - 基本类型使用包装类, 因为默认值是`null`, 有助于判断
+    - xml也可以自动生成JavaBean
+
+### 编写代码使用hibernate
+
+* 使用步骤
     - 加载配置文件
     - 创建SessionFactory对象, 生成Session对象
     - 开启事务
     - 编写sql代码
     - 提交事务
     - 释放资源
-* `Configuration`
-    - 用于加载配置文件
-* `SessionFactory`
-    - 创建Session的工厂类. 作为代理, 创建Session
-    - 一个项目通常只需要一个SessionFactory, 当有多个数据库时, 可以为每个数据库指定一个SessionFactory
-* `Session`
-    - 负责CRUD, 调用时创建, 用完后销毁
-    - 非线程安全
-    - `save(Object obj)`: 添加记录
-    - `saveOrUpdate(Object obj)`: 添加或更新已有记录
-    - `delete(Object obj)`: 通过JavaBean的主键删除指定记录
-    - `update(Object obj)`: 通过JavaBean的主键更新指定记录
-        - 注意更新时, 要先查询记录, 然后更新查询出来的记录
-    - `get(Class clazz, int id)`: 通过主键查询记录
-    - `Query createQuery(String hql)`: HQL查询
-        - 条件查询:
-            - `from JavaBean where field > ?`
-            - `from JavaBean where field > :变量占位符`
-    - `Criteria createCriteria(Class)`: Criteria条件查询
-* `Query`
-    - `setInteger(index, value)`: 设置hql占位符位置的值
-    - `setString(index, value)`: 设置hql占位符位置的值
-    - `List<T> list()`: 查询所有记录的所有字段
-* `Criteria`: 条件查询
-    - `add(Criterion)`: 添加查询条件
-        - `Restrictions`工具类创建Criterion
-            - `gt(column, value)`: 大于
-            - `like(column, value)`: 匹配
-    - `List<T> list()`: 查询所有记录的所有字段
-* `Transaction`
-    - `commit()`: 提交事务
-    - `rollback()`: 回滚事务
-
-Hibernate默认不会自动提交事务, 必须手动提交事务
-如果没有开启事务, 那么Session的每个操作都作为一个单独的事务
+* 相关类
+    - `Configuration`
+        - 用于加载配置文件
+    - `SessionFactory`
+        - 创建Session的工厂类. 作为代理, 创建Session
+        - 一个项目通常只需要一个SessionFactory, 当有多个数据库时, 可以为每个数据库指定一个SessionFactory
+    - `Session`
+        - 负责CRUD, 调用时创建, 用完后销毁
+        - 非线程安全
+        - `save(Object obj)`: 添加记录
+        - `saveOrUpdate(Object obj)`: 添加或更新已有记录
+        - `delete(Object obj)`: 通过JavaBean的主键删除指定记录
+        - `update(Object obj)`: 通过JavaBean的主键更新指定记录
+            - 注意更新时, 要先查询记录, 然后更新查询出来的记录
+        - `get(Class clazz, int id)`: 通过主键查询记录
+        - `Query createQuery(String hql)`: HQL查询
+            - 条件查询:
+                - `from JavaBean where field > ?`
+                - `from JavaBean where field > :变量占位符`
+        - `Criteria createCriteria(Class)`: Criteria条件查询
+    - `Query`
+        - `setInteger(index, value)`: 设置hql占位符位置的值
+        - `setString(index, value)`: 设置hql占位符位置的值
+        - `List<T> list()`: 查询所有记录的所有字段
+    - `Criteria`: 条件查询
+        - `add(Criterion)`: 添加查询条件
+            - `Restrictions`工具类创建Criterion
+                - `gt(column, value)`: 大于
+                - `like(column, value)`: 匹配
+        - `List<T> list()`: 查询所有记录的所有字段
+    - `Transaction`
+        - `commit()`: 提交事务
+        - `rollback()`: 回滚事务
+* 注意: 
+    - Hibernate默认不会自动提交事务, 必须手动提交事务
+    - 如果没有开启事务, 那么Session的每个操作都作为一个单独的事务
 
 
 ```java
 // 加载配置文件
 Configuration config = new Configuration();
-config.configure();  // 默认加载src目录下的hibernate.cfg.xml
+config.configure();  // 默认加载class目录下的hibernate.cfg.xml
 // 创建SessionFactory
 SessionFactory factory = config.buildSessionFactory();
 // 创建Session对象
 Session session = factory.openSession();
 // 开启事务
 Transaction tr = session.beginTransaction();
-// sql
-
+// 执行数据库操作
+session.save(user);
 // 提交事务
 tr.commit();
 // 释放资源
