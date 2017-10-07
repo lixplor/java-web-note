@@ -3,7 +3,9 @@
 * 持久层ORM框架, 操作数据库
 * 简化了开发, 提高效率
 * 提供额外功能, 如缓存
-
+* 基本概念:
+    - session: 与数据库的会话. 
+        - session与connection的关系: session与connection是多对一关系, 每个session都有一个与之对应的connection, 一个connection不同时刻可以供多个session使用
 
 ## 环境搭建
 
@@ -185,7 +187,7 @@
         - `void config(String filename)`: 加载指定名称的配置文件
     - `SessionFactory`接口: 初始化Hibernate, 作为数据源代理, 创建Session对象. 一个项目通常只需要一个SessionFactory, 当有多个数据库时, 可以为每个数据库指定一个SessionFactory
         - `Session openSession()`: 获取session
-        - `Session getCurrentSession()`: 获取当前连接的Session
+        - `Session getCurrentSession()`: 获取当前线程中ThreadLocal保存的的Session, 用于session与ThreadLocal绑定的情况
     - `Session`接口: 负责CRUD, 调用时创建, 用完后销毁. 非线程安全
         - `save(Object obj)`: 添加记录
         - `saveOrUpdate(Object obj)`: 添加或更新已有记录
@@ -214,13 +216,30 @@
         - `T uniqueResult()`: 查询唯一结果, 可以映射为一个JavaBean对象
         - `List<T> list()`: 将查询结果转换为List集合
     - `Criteria`接口: 条件查询
-        - `add(Criterion c)`: 添加查询条件
+        - `Criteria add(Criterion c)`: 添加查询条件
+        - `List<T> list()`: 按照Criteria对象内部的条件执行条件查询
     - `Restrictions`类: 工具类, 用于创建Criterion
         - `Criterion eq(String key, Object value)`: 等于
         - `Criterion gt(column, value)`: 大于
-        - `Criterion like(column, value)`: 匹配
-        - `Criterion or(Criterion... c)`: 或
+        - `Criterion ge()`: 大于等于
+        - `Criterion lt()`: 小于
+        - `Criterion le()`: 大于等于
+        - `Criterion between()`: 介于
+        - `Criterion like()`: 模式匹配
+        - `Criterion in()`: 在列表中
+        - `Criterion and()`: 条件与
+        - `Criterion or(Criterion... c)`: 条件或
+        - `Criterion isNull()`: 为空
         - `List<T> list()`: 查询所有记录的所有字段
+    - `Projections`类: 投影查询
+        - `static ProjectionList projectionList()`: 创建一个投影列表
+        - `static Projection sum(String propertyName)`: 求和
+        - `static Projection max(String propertyName)`: 求最大值
+        - `static Projection min(String propertyName)`: 求最小值
+        - `static Projection avg(String propertyName)`: 求平均值
+        - `static Projection count(String propertyName)`: 计数
+    - `ProjectionList`类: 投影列表, 可以添加聚合条件
+        - `ProjectionList add(Projection p)`: 添加一个投影聚合条件
     - `Transaction`接口: 管理实务
         - `commit()`: 提交事务
         - `rollback()`: 回滚事务
@@ -378,6 +397,514 @@ factory.close();
 
 
 
+
+## 多表操作
+
+### 建表原则
+
+* 一对一
+    - 唯一外键对应方式: 在任意一方添加UNIQUE的外键关联另一方的主键
+    - 主键对应方式: 一方的主键作为另一方的主键, 即两个表的主键值相同
+* 一对多
+    - 在多方添加外键关联一方主键
+* 多对多
+    - 创建中间表, 分别添加两个多方的外键列, 并分别关联两个多方的主键列
+
+
+### 一对多操作
+
+* JavaBean的定义
+    - 一方对多方的持有, 使用存储多方对象的集合表示
+        - hibernate中集合默认使用`Set`, 并且必须手动初始化
+    - 多方对一方的持有, 使用一方对象表示
+    
+```java
+// 一方
+public class User {
+    private Integer id;
+    private Set<Contactor> contactors = new HashSet<>();  // 对多, 必须手动初始化
+}
+```
+
+```java
+// 多方
+public class Contactor {
+    private Integer id;
+    private User user;   // 对一
+}
+```
+
+* hbm映射配置文件
+
+```xml
+<!-- 一方 -->
+<set name="多方属性名">
+    <key column="外键字段"/>
+    <one-to-many class="多方完整类名"/>
+</set>
+```
+
+```xml
+<!-- 多方 -->
+<many-to-one name="一方属性名" class="一方类完整路径" column="外键字段"/>
+```
+
+### 多对多操作
+
+* JavaBean的定义
+
+```java
+// 多方
+public class User {
+    private Integer id;
+    private Set<Contactor> contactors = new HashSet<>();  // 对多, 必须手动初始化
+}
+```
+
+```java
+// 多方
+public class Contactor {
+    private Integer id;
+    private Set<User> users = new HashSet<>();  // 对多, 必须手动初始化
+}
+```
+
+* hbm配置文件
+
+```xml
+<!-- 多 -->
+<set name="多方类属性" table="多方表名">
+    <key column="当前对象在中间表的外键名称"/>
+    <many-to-many class="集合存入对象的完整路径" column="集合中对象在中间表的外键的字段名称"/>
+</set>
+
+<!-- 另一个多, 同上 -->
+<set name="多方类属性" table="多方表名">
+    <key column="当前对象在中间表的外键名称"/>
+    <many-to-many class="集合存入对象的完整路径" column="集合中对象在中间表的外键的字段名称"/>
+</set>
+```
+
+### 多表关系下的级联操作
+
+* 在hbm配置文件中, `cascade`属性, 可以设置级联操作的方式. `inverse`属性可以设置对外键的维护方
+    - `cascade`属性可以使用多个值, 用逗号分隔: `cascade="save-update, delete"`
+        - `none`: 不使用级联
+        - `save-update`: 级联保存或更新. 如果是游离态对象则会执行update
+        - `delete`: 级联删除
+        - `delete-orphan`: 孤儿删除(只能应用在一对多关系)
+        - `all`: 除了delete-orphan的所有情况(包含save-update, delete)
+        - `all-delete-orphan`: 包含了delete-orphan的所有情况(包含save-update, delete, delete-orphan)
+    - `inverse`属性可以设置级联操作中外键的维护
+        - 作用: 只在双向关联的情况下有效, 用于确定由哪方来维护外键. 通常用于避免产生多余数据
+        - `<set>`标签加上`inverse="true"`属性, inverse用于维护外键
+            - `true`: 放弃, 由对方来维护外键
+            - `false`: 默认值, 不放弃, 由本方来维护外键
+        - 注意在多对多关系时, 必须要有一方放弃外键的维护
+* 保存数据的方式:
+    - 手动双向保存
+        - 一表和多表的数据都保存
+    - 单向级联保存(有方向性)
+        - 保存一表, 级联保存多表
+            - 在`<set>`标签中增加`cascade="save-update"`属性
+            - 这时只存一表, 即可自动保存多表
+        - 或者保存多表, 级联保存一表
+            - 在`<many-to-one>`标签中增加`cascade="save-update"`属性
+            - 这时只存多表, 即可自动保存多表
+    - 双向级联保存
+        - 一表和多表都增加`cascade`属性
+        - 一般都设置双向关联
+* 删除数据的方式:
+    - 手动删除: 有外键引用时, 必须先把外键设置为空, 才能删除
+    - 级联删除(有方向性)
+        - 使用`cascade="delete"`属性, 级联删除
+        - 或使用`cascade="delete-orphan"`属性, 删除与当前对象解除关系的对象 
+    - 孤儿删除
+        - 一对多关系中, 将一方认为是父方, 将多方认为是子方. 在解除了父子关系的时候, 将子方记录删除
+
+
+## 注解
+
+* 注解用于简化xml配置文件
+* 使用注解需要在`hibernate.cfg.xml`中进行配置
+    - 配置PO类注解: `<mapping class="com.package.ClassName"/>`
+* PO类注解
+    - `@Entity`: 声明一个实体
+        - 注解类
+    - `@Table`: 声明表名和类名的对应
+        - 注解类
+        - 如: `@Table(name="表名", catalog="")`
+    - `@Id`: 声明一个属性是主键
+        - 注解属性
+    - `@GeneratedValue`: 声明主键生成策略
+        - 注解主键属性
+        - 如: `@GeneratedValue(strategy=GenerationType.IDENTITY)`, 相当于`native`
+    - `@GenericGenerator`: 声明主键生成器
+        - 注解主键属性
+        - 如: `@GenericGenerator(name="自定义生成器名称", strategy="uuid")`, 然后使用`@GeneratedValue(generator="自定义的生成器名称")`
+    - `@Column`: 声明列与属性的对应
+        - 注解属性
+        - 如: `@Column(name="列名", length=长度, nullable=true)`
+        - 注意: 即使不使用该注解, 也会按照类的属性生成映射关系
+    - `@JoinColumn`: 声明外键列
+        - 注解属性
+        - 如: `@JoinColumn(name="外键列名")`
+    - `@Temporal`: 声明属性对应的数据库中的日期类型
+        - 注解属性
+        - 如: `@Temporal(TemporalType.TIMESTAMP)`
+    - `@OneToOne`: 声明一对一关系
+        - 注解属性
+        - 如: `@OneToOne(targetEntity=另一方类.class, mappedBy="维护外键一方的属性名")`
+    - `@OneToMany`: 在一方类中声明一对多关系
+        - 注解属性
+        - 如: `@OneToMany(targetEntity=集合中多方类.class, mappedBy="维护外键一方的属性名")`
+    - `@ManyToOne`: 在多方类中声明多对一关系
+        - 注解属性
+        - 如: `@ManyToOne(targetEntity=一方类.class)`
+        - 注意: 多对一不存在`mappedBy`属性
+    - `@ManyToMany`: 声明多对多关系
+        - 注解属性
+        - 如: `@ManyToMany(targetEntity=集合中多方类.class, mappedBy="维护外键一方的属性名")`
+    - `@JoinTable`: 声明多对多关系中的中间表映射关系
+        - 注解属性
+        - 如: `@JoinTable(name="中间表名", joinColumns={@JoinColumn(name="当前类的表在中间表的外键字段名")}, inverseJoinColumns={@JoinColumn(name="对方类的表在中间表的外键字段名")})`
+    - `@Cascade`: 声明级联操作方式
+        - 注解属性
+        - 如: `@Cascade(CascadeType.SAVE_UPDATE)`
+    - `@PrimaryKeyJoinColumn`: 声明一对一使用主键对应方式
+        - 注解属性
+    - `@NamedQuery`: 声明预先定义的HQL语句
+        - 注解类
+        - 如: `@NamedQuery(name="自定义名称", query="HQL语句")`
+    - `@NamedNativeQuery`: 声明预先定义的SQL语句
+        - 注解类
+        - 如: `@NamedNativeQuery(name="自定义名称", query="SQL语句", resultMapping="自定义SQL查询结果集映射名称")`
+    - `@SqlResultSetMapping`: 声明SQL查询结果集映射到哪个类
+        - 注解类
+        - 如: `@SqlResultSetMapping(name="userSetMapping", entities={@EntityResult(entityClass=User.class, fields={@FieldResult(name="id", column="id"), @FieldResult(name="name", column="name")})})`
+
+
+* 一对一示例: 唯一外键对应
+
+```java
+// 一方实体类
+@Entity
+@Table(name = "t_user")
+public class User {
+
+    @Id   // 指定为主键
+    @GenericGenerator(name = "uuidGen", strategy = "uuid")  // 设置主键生成器, 使用uuid作为主键值
+    @GeneratedValue(generator = "uuidGen")  // 主键生成策略使用自定义的uuid生成器
+    private String id;
+
+    private String name;
+
+    @OneToOne(targetEntity = IDCard.class, mappedBy = "user")  // 设置一对一关系, 外键由user维护
+    private IDCard idCard;
+}
+```
+
+```java
+// 一方实体类
+@Entity
+@Table(name = "t_idcard")
+public class IDCard {
+
+    @Id   // 指定为主键
+    @GenericGenerator(name = "uuidGen", strategy = "uuid") // 设置主键生成器, 使用uuid作为主键值
+    @GeneratedValue(generator = "uuidGen")  // 主键生成策略使用自定义的uuid生成器
+    private String id;
+
+    private String cardNum;
+
+    @OneToOne(targetEntity = User.class)  // 设置一对一关系
+    @JoinColumn(name = "c_user_id")  // 设置对应的外键字段名
+    @Cascade(CascadeType.SAVE_UPDATE)  // 级联策略
+    private User user;
+}
+```
+
+* 一对一示例: 主键对应
+
+```java
+// 一方实体类
+@Entity
+@Table(name = "t_user")
+public class User {
+
+    @Id   // 指定为主键
+    @GenericGenerator(strategy = GenerationType.IDENTITY) 
+    private String id;
+
+    private String name;
+
+    @OneToOne
+    @PrimaryKeyJoinColumn  // 设置主键映射
+    private IDCard idCard;
+}
+```
+
+```java
+// 一方实体类
+@Entity
+@Table(name = "t_idcard")
+public class IDCard {
+
+    @Id   // 指定为主键
+    @GenericGenerator(name = "foreignKeyGen", strategy = "foreign", parameters = {@Parameter(name = "property", value = "user")}) // 设置主键生成器, 使用user的主键
+    @GeneratedValue(generator = "foreignKeyGen")  // 主键生成策略使用自定义的生成器
+    private String id;
+
+    private String cardNum;
+
+    @OneToOne
+    @PrimaryKeyJoinColumn  // 设置主键映射
+    private User user;
+}
+```
+
+* 一对多示例
+
+```java
+// 一方实体类
+@Entity
+@Table(name = "t_user")
+public class User {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTIFY)
+    private Integer id;
+
+    private String name;
+
+    @OneToMany(targetEntity = Order.class, mappedBy = "user")
+    private Set<Order> orders = new HashSet<>();
+}
+```
+
+```java
+// 多方实体类
+@Entity
+@Table(name = "t_order")
+public class Order {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTIFY)
+    private Integer id;
+
+    private String name;
+
+    @ManyToOne(targetEntity = User.class)
+    private User user;
+}
+```
+
+* 多对多示例
+
+```java
+// 多方表实体类
+@Entity
+@Table(name="t_student")
+public class Student {
+
+    @Id  // 该字段为主键
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  // 主键生成策略为native
+    private Integer id;
+
+    private String name;
+
+    @ManyToMany(targetEntity = Subject.class, mappedBy = "students") // 多对多映射, 外键由对方维护
+    private Set<Subject> subjects = new HashSet<>();
+}
+```
+
+```java
+// 多方表实体类
+@Entity
+@Table(name="t_subject")
+public class Subject {
+
+    @Id  // 该字段为主键
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  // 主键生成策略为native
+    private Integer id;
+
+    private String name;
+
+    @ManyToMany(targetEntity = Student.class) // 多对多映射, 外键由对方维护
+    @JoinTable(name="t_student_subject_mapping", joinColumns={@JoinColumn(name="c_subject_id")}, inverseJoinColumns={@JoinColumn(name="c_student_id")})
+    @Cascade(CascadeType.SAVE_UPDATE)
+    private Set<Student> students = new HashSet<>();
+}
+```
+
+
+## 查询
+
+* Hibernate提供的查询方式:
+    - 唯一标识(OID)查询方式: 按照对象的OID查询
+        - `User user = session.get(User.class, 2);`
+        - `User user = session.load(User.class, 2);`
+    - 对象图导航(OGNL)查询方式: 根据已加载的对象导航到其他对象(通过一个对象获取其关联的另一个对象)
+        - `Order order = user.getOrders().get(0)`, 通过User对象找到Order对象
+    - HQL查询方式(推荐): 面向对象的HQL查询语言
+        - Hibernate Query Language, 与SQL类似, 但更加面向对象
+        - 步骤:
+            - 获取session
+            - 编写HQL语句
+            - 调用`session.createQuery(hql)`创建`Query`对象
+            - 调用`Query`对象的`setParameter(String key, Object value)`设置查询条件参数
+            - 调用`list()`返回所有查询结果, 调用`uniqueResult()`返回一个查询结果
+        - 语法: 
+            - HQL语句格式:
+                - `SELECT/UPDATE/DELETE ... FROM ... WHERE ... GROUP BY ... HAVING ... ORDER BY ... ASC/DESC`
+            - 命名参数:
+                - 格式: `:参数名`
+                - 作用: 作为参数占位符, 有名字可以使用
+                - 设置参数值: `query.setParameter(key, value)`
+            - 位置参数:
+                - 格式: `?`
+                - 作用: 作为参数占位符, 只能通过索引设置参数
+                - 设置参数值: `query.setString(0, "hello")`
+        - 查询方式
+            - 链式调用
+                - `session.createQuery("from Customer").list().size()`
+            - 别名方式:
+                - `session.createQuery("from Customer c")`
+                - 别名: `session.createQuery("select c from Customer c")`
+            - 条件查询: 
+                - 创建查询: 
+                    - `session.createQuery("from User u where u.id > ?")`
+                - 设置参数值:
+                    - `setParameter(int index, Object value)`: 设置指定index位置的`?`占位符的值
+                    - `setParameter(String key, Object value)`: 设置指定命名参数key变量的值
+            - 投影查询: 查询指定字段
+                - 普通方式返回的是对象数组: 
+                    - `List<Object[]> session.createQuery("select column1, column2 from User").list()`
+                - 投影方式步骤:
+                    1. 在JavaBean中声明包含要查询字段的带参构造方法(注意同时保留空参构造方法)
+                    2. HQL语句中创建对象: 
+                        - `List<User> = session.createQuery("select new 类(column1, column2) from User").list();`
+            - 排序查询: 
+                - `session.createQuery("from User u order by u.id asc")`
+            - 分页查询:
+                - `query.setFirstResult(int offset)`: 从哪条记录开始, 从0开始
+                - `query.setMaxResults(int limit)`: 每页需要的记录条数
+                - 每页10个第2页: `List<User> users = session.createQuery("from User").setFirstResult(10).setMaxResults(10).list();`
+            - 聚合查询:
+                - `count()`:
+                    - `List<Number> list = session.createQuery("select count(*) from User").list();`
+                    - `int count = list.get(0).intValue();`
+                - `sum()`
+                    - `List<Number> list = session.createQuery("select sum(id) from User").list();`
+                    - `Long sum = list.get(0).longValue();`
+                - `avg()`
+                - `max()`
+                - `min()`
+            - 命名查询:
+                - 将HQL定义好, 并起名, 查询时按照名字查找HQL语句并执行
+                - 定义位置:
+                    - 每个JavaBean的hbm配置文件中
+                        - `<query name="自定义名称">HQL语句</query>`
+                    - 或注解中
+                        - `@NamedQuery(name="自定义名称", query="HQL语句")`
+    - QBC查询方式(推荐, 用于条件查询): 封装了字符串形式查询的API, 提供面向对象的查询接口
+        - Query By Criteria, 条件查询
+        - `Criteria c = session.createCriteria(类.class);`
+        - `Criteria`类的API
+            - 排序: 
+                - `criteria.addOrder(Order.asc|desc(column))`
+            - 分页
+                - `criteria.setFirstResult(int offset)`
+                - `criteria.setMaxResults(int limit)`
+            - 条件: 
+                - `criteria.add(Restrictions r)`: 添加条件
+                    - `Restrictions.eq()`: 等于
+                    - `Restrictions.gt()`: 大于
+                    - `Restrictions.ge()`: 大于等于
+                    - `Restrictions.lt()`: 小于
+                    - `Restrictions.le()`: 大于等于
+                    - `Restrictions.between()`: 介于
+                    - `Restrictions.like()`: 模式匹配
+                    - `Restrictions.in()`: 在列表中
+                    - `Restrictions.and()`: 条件与
+                    - `Restrictions.or()`: 条件或
+                    - `Restrictions.isNull()`: 为空
+            - 聚合:
+                - 设置投影聚合: 
+                    - `Criteria setProjection(Projections p)`
+                        - `Projections.count()`
+                        - `Projections.sum()`
+                        - `Projections.max()`
+                        - `Projections.min()`
+                        - `Projections.avg()`
+                - 清空Projection: 
+                    - `criteria.setProjection(null);`
+                    - 设置一种Projection后, 后续查询都会使用该Project, 如需更换查询, 必须清空Projection
+            - 离线条件查询:
+                - 脱离session来创建查询, 可以不局限于service层查询
+                - 创建离线条件查询对象: 
+                    - `DetachedCriteria dc = DetachedCriteria.fromClass(类.class);`
+                - 执行查询: 
+                    - `List<T> list = dc.getExecutableCriteria(session).list();`
+    - SQL查询方式: 直接使用SQL语句查询
+        - 创建查询: 
+            - `SQLQuery q = session.createSQLQuery(String sql);`
+        - 默认返回Object数组: 
+            - `List<Object[]> list = q.list();`
+            - 可以通过设置返回类型修改返回List的泛型: `q.addEntity(类.class)`
+        - 支持命名查询, 可以将SQL定义好, 按名称调用
+            - 定义位置:
+                - 每个JavaBean的hbm配置文件中
+                    - `<sql-query name="自定义名称">SQL语句</sql-query>`
+                - 或注解中
+                    - `@NamedNativeQuery(name="自定义名称", query="SQL语句", resultMapping="自定义SQL查询结果集映射名称")`
+                    - `@SqlResultSetMapping(name="userSetMapping", entities={@EntityResult(entityClass=User.class, fields={@FieldResult(name="id", column="id"), @FieldResult(name="name", column="name")})})`
+
+### 使用HQL进行多表查询
+
+* 操作分类(Hibernate中有迫切连接的概念, SQL中没有)
+    - 交叉连接
+        - 交叉连接会产生笛卡尔积
+        - 语法: `... CROSS JOIN ...`
+        - 示例: `SELECT * FROM t_1 CROSS JOIN t_2;`
+    - 内连接
+        - 显式内连接
+            - 查询的结果是`Object[]`
+            - 语法: `INNER JOIN ... WITH ...`
+            - 示例: `FROM User u INNER JOIN u.orders WITH u.id = 1;`
+        - 隐式内连接
+            - 查询的结果是`Object[]`. 语法和SQL中不一样, 使用`.`来关联
+            - 语法: ``
+            - 示例: `FROM Order o WHERE o.u.id = 1;`
+        - 迫切内连接
+            - 查询的结果会直接封装到PO类中
+            - 语法: `... INNER JOIN FETCH ...`
+            - 示例: `SELECT DISTINCT u FROM User u INNER JOIN FETCH u.orders;`
+    - 外连接
+        - 左外连接
+            - 查询的结果是`Object[]`
+            - 语法: `... LEFT OUTER JOIN ...`
+            - 示例: `FROM User u LEFT OUTER JOIN u.orders;`
+        - 迫切左外连接
+            - 查询的结果会直接封装到PO类只能够
+            - 语法: `... LEFT OUTER JOIN FETCH ...`
+            - 示例: `SELECT DISTINCT u FROM User u LEFT OUTER JOIN FETCH u.orders WHERE u.id = 1;`
+        - 右外链接
+            - 查询的结果是`Object[]`
+            - 语法: `... RIGHT OUTER JOIN ...`
+            - 示例: `FROM User u RIGHT OUTER JOIN u.orders;`
+* 内连接查询
+    - HQL: `from User u inner join fetch u.orders`
+    - 两个问题的处理:
+        - 返回列表泛型是Object[]的问题, 想要变成类型: 使用`fetch`关键字
+            - fetch: 迫切连接, 把数据封装到对象中
+        - 查询结果重复的问题: 将List集合放入Set中去重
+* 左外连接查询
+    - HQL: `from User u left join fetch u.orders`
+* 右外连接查询
+    - HQL: `from User u right join fetch u.orders`
+
+
 ## 事务管理
 
 * 事务: 一组操作, 必须同时成功, 或同时不成功
@@ -391,14 +918,14 @@ factory.close();
         - 问题
             - 脏读: 一个事务读到了另一个事物未提交的数据
             - 不可重复读: 一个事务读到了另一个事物已经提交的update数据, 导致多次查询结果不一致
-            - 虚读: 一个事务督导了另一个事物已经提交的insert数据, 导致多次查询结果不一致
+            - 虚读(幻读): 一个事务读到了另一个事物已经提交的insert数据, 导致多次查询结果不一致
         - 解决
-        * 通过设置数据库的隔离级别来解决上述读的问题   
-        Hibernate设置隔离级别, 在`hibernate.cfg.xml`配置文件中使用标签来配置`hibernate.connection.isolation = 4`
-            - `1`: 未提交读(Read uncommitted isolation): 以上的读的问题都有可能发生
-            - `2`: 已提交读(Read committed isolation): 避免脏读. 但是不可重复读, 虚读都有可能发生
-            - `3`: 可重复读(Repeatable read isolation): 避免脏读和不可重复读. 但虚读有可能发生
-            - `4`: 串行化(Serializable isolation): 以上读的情况都可以避免
+            - 通过设置数据库的隔离级别来解决上述读的问题   
+                - 在`hibernate.cfg.xml`配置文件中使用标签来配置`hibernate.connection.isolation = 4`
+                    - `1`: 未提交读(Read uncommitted isolation): 以上的读的问题都有可能发生
+                    - `2`: 已提交读(Read committed isolation): 避免脏读. 但是不可重复读, 虚读都有可能发生
+                    - `4`: 可重复读(Repeatable read isolation): 避免脏读和不可重复读. 但虚读有可能发生
+                    - `8`: 串行化(Serializable isolation): 以上读的情况都可以避免
     - 写的问题
         - 问题:
             - 丢失更新, 如两个事物同时修改一条记录
@@ -408,222 +935,119 @@ factory.close();
             - 乐观锁(使用较多)
                 - 给JavaBean添加新的属性`version`, 提供getter和setter, 每次操作判断版本
                 - 然后在映射的配置文件中添加`<version name='version'/>`标签即可
-* 事务绑定本地session
-    - 作用: 需要在业务层开启事务, 如何操作
-        - 方法1: 通过参数方式传递下去
-        - 方式2: 把Connection绑定到ThreadLocal对象中
-    - 原理: `ThreadLocal`类
-        - 底层是Map集合: `Map<当前线程, 值>`
-        - 将值保存到当前线程中, key就是固定的当前线程
-        - 用于在不同层之间传递数据
-    - 在hibernate框架中使用session对象开启事务, 使用框架提供的基于ThreadLocal的方式传递session对象
-        - `hibernate.cfg.xml`配置开启: `<property name="hibernate.current_session_context_class">thread</property>`
-        - `sessionFactory.getCurrentSession()`: 从ThreadLocal中获取session
-        - 这种情况不用关session, 线程结束后session自动关闭
-
-
-## 多表操作
-
-### 一对多操作
-
-* 建表原则
-    - 一表id是主键
-    - 多表中增加一表的id字段, 作为`外键`, 指向一表的`主键`id
-* 多的一方使用集合表示
-    - hibernate中集合默认使用`Set`, 并且必须手动初始化
-
-```java
-// 一表
-public class User {
-    private Integer id;
-    private Set<Contactor> contactors = new HashSet<>;  // 对多, 必须手动初始化
-}
-
-// 多表
-public class Contactor {
-    private Integer id;
-    private User user;   // 对一
-}
-```
-
-```xml
-<!-- 一方 -->
-<set name="多方属性名">
-    <key column="外键字段"/>
-    <one-to-many class="多方完整类名"/>
-</set>
-
-<!-- 多方 -->
-<many-to-one name="属性名" class="类完整路径" column="外键字段"/>
-```
-
-保存数据的方式:
-* 双向保存
-    - 一表和多表都保存
-* 单向级联保存(有方向性)
-    - 保存一表, 级联保存多表
-        - 在`<set>`标签中增加`cascade="save-update"`属性
-        - 这时只存一表, 即可自动保存多表
-    - 或者保存多表, 级联保存一表
-        - 在`<many-to-one>`标签中增加`cascade="save-update"`属性
-        - 这时只存多表, 即可自动保存多表
-* 级联删除(有方向性)
-    - 有外键引用时, 必须先把外键设置为空, 才能删除
-    - 使用`cascase="delete"`属性
-* `cascade`可以使用多个值, 用逗号分隔: `cascade="save-update, delete"`
-    - `none`: 不使用级联
-    - `save-update`: 级联保存或更新
-    - `delete`: 级联删除
-    - `delete-orphan`: 孤儿删除(只能应用在一对多关系)
-    - `all`: 除了delete-orphan的所有情况(包含save-update, delete)
-    - `all-delete-orphan`: 包含了delete-orphan的所有情况(包含save-update, delete, delete-orphan)
-* 孤儿删除
-    - 一对多关系中, 将一方认为是父方, 将多方认为是子方. 在解除了父子关系的时候, 将子方记录删除
-* 一方放弃外键的维护
-    - 作用: 避免产生多余数据
-    - `<set>`标签加上`inverse="true"`属性, inverse用于维护外键
-        - `true`: 放弃
-        - `false`: 默认值, 不放弃
-
-
-### 多对多操作
-
-* 建表原则
-    - 使用中间表, 保存两个多表的主键作为外键
-    - 或者将多对多拆分为两个一对多
-
-```xml
-<!-- 多 -->
-<set name="多表类属性" table="多表">
-    <key column="当前对象在中间表的外键名称"/>
-    <many-to-many class="集合存入对象的完整路径" column="集合中对象在中间表的外键的字段名称"/>
-</set>
-
-<!-- 另一个多, 同上 -->
-```
-
-保存数据的方式:(同一对多)
-* 级联
-    - 级联保存(双向级联)
-    - 级联删除(多对多中很少使用)
-* 放弃外键的维护
-    - 注意: 多对多时, 必须要有一方放弃外键的维护
-
-
-## 查询
-
-Hibernate提供的查询方式:
-* 唯一标识OID的查询方式
-    - `session.get(类.class, OID)`
-* 对象的导航的查询方式
-    - `new User().getRole().getName()`
-* HQL的查询方式(推荐)
-    - Hibernate Query Language, 与SQL类似
-    - 语法: **todo**
-    - 查询方式
-        - 链式调用
-            - `session.createQuery("from Customer").list().size()`
-        - 别名方式:
-            - `session.createQuery("from Customer c")`
-            - 别名: `session.createQuery("select c from Customer c")`
-            - 条件: `session.createQuery("from User u where u.id > ?")`
-                - `setParameter(int index, Object value)`: 设置指定index位置的`?`占位符的值
-                - `setParameter(String key, Object value)`: 设置指定key变量的值
-            - 投影: 查询指定字段
-                - 普通方式返回的是对象数组: `List<Object[]> session.createQuery("select column1, column2 from User").list()`
-                - 投影方式步骤:
-                    1. 在JavaBean中声明包含要查询字段的带参构造方法(注意同时保留空参构造方法)
-                    2. HQL语句中创建对象: `List<User> = session.createQuery("select new 类(column1, column2) from User").list();`
-            - 排序: `session.createQuery("from User u order by u.id asc")`
-            - 分页:
-                - `setFirstResult(int offset)`: 从哪条记录开始, 从0开始
-                - `setMaxResults(int limit)`: 每页需要的记录条数
-                - 每页10个第2页: `List<User> users = session.createQuery("from User").setFirstResult(10).setMaxResults(10).list();`
-            - 聚合:
-                -
-                - `count()`:
-                    - `List<Number> list = session.createQuery("select count(*) from User").list();`
-                    - `int count = list.get(0).intValue();`
-                - `sum()`
-                    - `List<Number> list = session.createQuery("select sum(id) from User").list();`
-                    - `Long sum = list.get(0).longValue();`
-                - `avg()`
-                - `max()`
-                - `min()`
-* QBC查询方式(推荐, 用于条件查询)
-    - Query By Criteria, 条件查询
-    - `Criteria c = session.createCriteria(类.class);`
-    - `Criteria`
-        - 排序: `addOrder(Order.asc|desc(column))`
-        - 分页
-            - `setFirstResult(int offset)`
-            - `setMaxResults(int limit)`
-        - 条件: `criteria.add(Restrictions)`
-            - `Restrictions.eq()`: 等于
-            - `Restrictions.gt()`: 大于
-            - `Restrictions.ge()`: 大于等于
-            - `Restrictions.lt()`: 小于
-            - `Restrictions.le()`: 大于等于
-            - `Restrictions.between()`: 介于
-            - `Restrictions.like()`: 模式匹配
-            - `Restrictions.in()`: 在列表中
-            - `Restrictions.and()`: 条件与
-            - `Restrictions.or()`: 条件或
-            - `Restrictions.isNull()`: 为空
-        - 聚合
-            - `List<Number> list = criteria.setProjection(Projections)`
-                - `Projections.count()`
-            - 清空Projection: `criteria.setProjection(null);`
-                - 设置一种Projection后, 后续查询都会使用该Project, 如需更换查询, 必须清空Projection
-        - 离线条件查询
-            - 脱离session来创建查询, 可以不局限于service层查询
-            - 创建离线条件查询对象: `DetachedCriteria dc = DetachedCriteria.fromClass(类.class);`
-            - 执行查询: `List<T> list = dc.getExecutableCriteria(session).list();`
-* SQL查询方式
-    - 创建查询: `SQLQuery q = session.createSQLQuery(String sql);`
-    - 默认返回Object数组: `List<Object[]> list = q.list();`
-        - 可以通过设置返回类型修改返回List的泛型: `q.addEntity(类.class)`
-
-### HQL进行多表查询
-
-* 内连接查询
-    - HQL: `from User u inner join fetch u.orders`
-    - 两个问题的处理:
-        - 返回列表泛型是Object[]的问题, 想要变成类型: 使用`fetch`关键字
-            - fetch: 迫切连接, 把数据封装到对象中
-        - 查询结果重复的问题: 将List集合放入Set中去重
-* 左外连接查询
-    - HQL: `from User u left join fetch u.orders`
-* 右外连接查询
-    - HQL: `from User u right join fetch u.orders`
+* Hibernate对session的3种管理方式
+    1. Session对象的生命周期与ThreadLocal绑定
+        - 原理: 底层使用的是ThreadLocal, 将Connection与当前线程绑定
+        - 步骤:
+            - `hibernate.cfg.xml`配置:
+                - `<property name="hibernate.current_session_context_class">thread</property>`
+            - 更换代码中获取session的方法:
+                - `Session session = sessionFactory.getCurrentSession();`
+            - 注意此方式不需要关闭session, 在线程结束会自动关闭session, 如果调用`session.close()`则会报错
+    2. Session对象的生命周期与JTA事务绑定(分布式事务管理)
+    3. Hibernate委托程序代码来管理Session的生命周期, 即通过调用代码获取session和销毁session
 
 
 
 ## 性能优化
 
-* 延迟加载, 提升性能
-    - 先获取代理对象, 当真正用到该对象的属性时, 才会发送SQL语句
-    - 2种延迟加载:
-        - 类级别的延迟加载
-            - session对象的load方法默认就是延迟加载: `User u = session.load(User.class, 1L);`
-            - 在xml配置中的`<class>`标签增加属性`lazy="true"`, 设置为`false`可以关闭延迟加载
-        - 关联级别的延迟加载
-            - 默认就是延迟加载
-* `<set>`标签的配置策略
-    - `fetch`: 控制SQL语句的生成格式
-        - `select`: 默认, 发送查询语句
-        - `join`: 连接查询, 发送一条迫切左外连接, 配置了join, lazy就会失效
-        - `subselect`: 子查询. 发送一条子查询, 查询其关联对象
-    - `lazy`: 查找关联对象的时候是否采用延迟加载
-        - `true`: 默认, 使用延迟加载
-        - `false`: 不使用延迟加载
-        - `extra`: 极为延迟
-* `<many-to-one>`标签的配置策略:
-    - `fetch`: 控制SQL格式
-        - `select`: 默认, 发送基本select语句查询
-        - `join`: 发送迫切左外连接查询
-    - `lazy`: 控制加载关联对象是否采用延迟
-        - `proxy`: 默认, 代理方式, 是否延迟由一表的以下情况决定:
-            - 如果一表的`<class>`上的lazy为`true`, 则proxy的值就是`true`, 延迟加载
-            - 否则就是`false`, 不延迟加载
-        - `false`: 不采用
+* HQL语句优化
+    - 使用参数绑定
+        - 可以让数据库一次解析SQL, 对后续的重复请求直接使用已经生成的执行计划, 节省CPU计算量和内存
+        - 可以避免SQL注入
+    - 少使用NOT
+        - 如果where子句中包含not, 则执行时该字段的索引会失效
+    - 尽可能使用where, 少用having
+        - having在查询出所有记录后才对结果集进行过滤, 效率较低
+    - 减少子查询
+        - 子查询越多效率越低
+    - 尽量使用表别名提高阅读性
+* Session缓存优化
+    - 缓存太大需要及时清理, 可以调用`session.evict()`或`session.clear()`
+* 查询策略优化
+    - 延迟加载
+        - 作用: 先获取代理对象, 当真正用到该对象的属性时, 才会发送SQL语句. 提高程序执行效率
+        - 调用session的查询方法使用不同的策略:
+            - `session.get()`: 立即加载
+            - `session.load()`: 延迟加载
+        - 2种延迟加载策略:
+            - 类级别的延迟加载
+                - 通过session直接查询某一类对应的数据
+                - session对象的load方法默认就是延迟加载: 
+                    - `User u = session.load(User.class, 1L);`
+                - 开启或关闭延迟加载的配置方式:
+                    - 在hbm配置中的`<class>`标签增加属性`lazy="是否延迟加载"`
+                        - `true`: 延迟加载
+                        - `false`: 立即加载
+                    - 或使用注解`@Proxy(lazy=是否延迟加载)`
+                        - `true`: 延迟加载
+                        - `false`: 立即加载
+            - 关联级别的延迟加载
+                - 默认就是延迟加载
+* 抓取策略优化
+    - hbm配置关联方的抓取策略:
+        - `<set>`标签的配置策略
+            - `fetch`: 控制SQL语句的生成格式
+                - `select`: 默认, 发送查询语句
+                - `join`: 连接查询, 发送一条迫切左外连接, **配置了join, lazy就会失效**
+                - `subselect`: 子查询. 发送一条子查询, 查询其关联对象
+            - `lazy`: 查找关联对象的时候是否采用延迟加载
+                - `true`: 默认, 使用延迟加载
+                - `false`: 不使用延迟加载
+                - `extra`: 极为延迟
+        - `<many-to-one>`或`<one-to-one>`标签的配置策略:
+            - `fetch`: 控制SQL格式
+                - `select`: 默认, 发送基本select语句查询
+                - `join`: 发送迫切左外连接查询
+            - `lazy`: 控制加载关联对象是否采用延迟
+                - `proxy`: 默认, 代理方式, 是否延迟由一表的以下情况决定:
+                    - 如果一表的`<class>`上的lazy为`true`, 则proxy的值就是`true`, 延迟加载
+                    - 否则就是`false`, 不延迟加载
+                - `false`: 不采用
+    - 或采用注解方式配置抓取策略:
+        - `@Fetch(FetchMode.SELECT)`
+        - 多方: `@LazyCollection(LazyCollectionOption.TRUE)`
+        - 一方: `@LazyToOne(LazyToOneOption.FALSE)`
+    - 常见配置组合
+        - 一方类中对多方属性的注解:
+            - 组合1: 先查当前类信息, 需要用到多方时才会查询
+                - `@Fetch(FetchMode.SELECT)`
+                - `@LazyCollection(LazyCollectionOption.TRUE)`
+            - 组合2: 查当前类信息, 并同时查询多方信息
+                - `@Fetch(FetchMode.SELECT)`
+                - `@LazyCollection(LazyCollectionOption.FALSE)`
+            - 组合3: 先查当前类信息, 需要用到多方的某个部分, 则只查询某个部分, 不会全查
+                - `@Fetch(FetchMode.SELECT)`
+                - `@LazyCollection(LazyCollectionOption.EXTRA)`
+            - 组合4: 立即查询, 且是迫切左外连接方式
+                - `@Fetch(FetchMode.JOIN)`
+                - `@LazyCollection(LazyCollectionOption.FALSE)`
+            - 组合5: 生成子查询, 多方使用延迟加载
+                - `@Fetch(FetchMode.SUBSELECT)`
+                - `@LazyCollection(LazyCollectionOption.TRUE)`
+            - 组合6: 生成子查询, 多方立即加载
+                - `@Fetch(FetchMode.SUBSELECT)`
+                - `@LazyCollection(LazyCollectionOption.FALSE)`
+            - 组合7: 生成子查询, 需要用到多方的某个部分, 则只查询某个部分, 不会全查
+                - `@Fetch(FetchMode.SUBSELECT)`
+                - `@LazyCollection(LazyCollectionOption.EXTRA)`
+        - 多方类中对一方属性的注解:
+            - 组合1: 先查当前类信息, 需要用到一方时才会查询
+                - `@Fetch(FetchMode.SELECT)`
+                - `@LazyToOne(LazyToOneOption.PROXY)`
+                - 需要一方类使用注解开启延迟加载: `@Proxy(lazy = true)`
+            - 组合2: 查当前类信息, 并同时查询一方信息
+                - `@Fetch(FetchMode.SELECT)`
+                - `@LazyToOne(LazyToOneOption.PROXY)`
+                - 需要一方类使用注解关闭延迟加载: `@Proxy(lazy = false)`
+            - 组合3: 查当前类信息, 并同时查询一方信息
+                - `@Fetch(FetchMode.SELECT)`
+                - `@LazyToOne(LazyToOneOption.FALSE)`
+            - 组合4: 立即查询, 且是迫切左外连接方式
+                - `@Fetch(FetchMode.JOIN)`
+                - `@LazyToOne(LazyToOneOption.FALSE)`
+    - 批量抓取策略
+        - 多表映射关系中, 主键一方是父表, 有外键一方是子表. 
+        - 无论查询来自哪方, 都要在父方设置批量抓取策略:
+            - hbm中增加`batch-size`属性设置
+            - 或使用注解`@BatchSize(size = 数值)`
