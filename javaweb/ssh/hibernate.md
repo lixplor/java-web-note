@@ -266,65 +266,116 @@ factory.close();
 * 瞬时态(transient): 也叫临时态或自由态
     - 没有持久化标识OID
     - 没有被Session管理
-    - 如: Java代码中创建的对象, 而不是数据库查询出的
+    - 如: Java代码中创建的对象, 而不是数据库查询出的, 一般只用来传递信息, 使用完毕后会被JVM回收
 * 持久态(persistent)
     - 有持久化标识OID
     - 有被Session管理
-    - 如: Java代码中创建的对象, 使用session.save()保存到了缓存中
-* 托管态(detached): 也叫游离态或离线态, 指持久态对象失去了与session的关联
+    - 如: Java代码中创建的对象, 使用session.save()保存到了缓存中. 数据库中可能有也可能没有
+* 脱管态(detached): 也叫游离态或离线态, 指持久态对象失去了与session的关联
     - 有持久化标识OID
     - 没有被Session管理
-    - 如: Java代码中创建的对象, 使用session.save()保存到了缓存中, 提交了事务, 关闭了会话session.close(), session不再管理, 但存在OID
+    - 如: Java代码中创建的对象, 使用session.save()保存到了缓存中, 提交了事务, 关闭了会话session.close(), session不再管理, 但存在OID. 数据库种可能有也可能没有
+* 判断状态的依据:
+    - 是否有OID
+    - 判断是否与session关联
+* 三种状态的获取和脱离:
+    - 瞬时态:
+        - 获取:
+            - new对象
+        - 脱离:
+            - 垃圾回收
+    - 持久态
+        - 获取:
+            - `get()`
+            - `load()`
+            - `find()`
+            - `iterate()`
+            - 等等
+        - 脱离:
+            - 垃圾回收
+    - 脱管态:
+        - 获取:
+            - 无法直接获取
+        - 脱离:
+            - 垃圾回收
 * 三种状态的转换:
-    - 获取瞬时态
-        - new对象
-    - 脱离瞬时态
-        - 垃圾回收
-    - 获取持久态
-        - `get()`
-        - `load()`
-        - `find()`
-        - `iterate()`
-        - 等等
-    - 脱离持久态
-        - 垃圾回收
-    - 瞬时态 -> 持久态
-        - `save()`
-        - `saveOrUpdate()`
-    - 持久态 -> 瞬时态
-        - `delete()`
-    - 持久态 -> 托管态
-        - `evict()`
-        - `close()`
-        - `clear()`
-    - 托管态 -> 持久态
-        - `update()`
-        - `saveOrUpdate()`
-        - `lock()`
+    - 瞬时态:
+        - 瞬时态 -> 持久态
+            - `save()`
+            - `saveOrUpdate()`
+        - 瞬时态 -> 脱管态:
+            - 手动设置OID
+    - 持久态:
+        - 持久态 -> 瞬时态
+            - `delete()`
+        - 持久态 -> 脱管态
+            - `evict()`: 清除一级缓存中指定的一个对象
+            - `close()`: 清空以及缓存
+            - `clear()`: 关闭, 清空一级缓存
+    - 脱管态:
+        - 脱管态 -> 瞬时态
+            - 将OID删除
+        - 脱管态 -> 持久态
+            - `update()`
+            - `saveOrUpdate()`
+            - `lock()`
+
+
+
+```
++------+    new    +--------------------+
+| 对象 |  ------->  | 瞬时态(Transient)  | -----------------+
++------+           +--v--------------^--+                  |
+   |                  |              |                     |
+   get()              save()         delete()              |
+   load()             saveOrUpdate() |                     |
+   find()             |              |                     |
+   iterate()          |              |                     v
+   |               +--v--------------^--+                  垃圾回收
+   +------------>  | 持久态(Persistent)  |                  ^
+                   +--v--------------^--+                  |
+                      |              |                     |
+                      evict()        update()              |
+                      close()        saveOrUpdate()        |
+                      clear()        lock()                |
+                      |              |                     |
+                   +--v--------------^--+                  |
+                   | 脱管态(Detached)    | -----------------+
+                   +--------------------+
+```
 
 
 ## 缓存
 
-### Session的一级缓存
-
-* 缓存: 内存中存储数据的空间, 提升获取数据的效率
+* 缓存: 内存中存储数据的空间, 用于提升获取数据的效率
 * 一级缓存: 自带, 不可取消. 生命周期与session一致, 是session级别的缓存
 * 二级缓存: 默认没有开启, 需要配置开启. 二级缓存可以再多个session中共享数据, 是sessionFactory级别的缓存
 
-### 操作session一级缓存
+### 一级缓存: Session
 
-* `session.clear()`: 清空缓存
-* `session.evict(Object entity)`: 从一级缓存中清除指定的实体对象
-* `session.flush()`: 刷出缓存
+* Session中定义了一系列的集合来存储数据, 构成session缓存
+    - `private transient ActionQueue actionQueue;`: 一个队列, 用来记录crud操作
+    - `private transient StatefulPersistenceContext persistenceContext;`: 真正的缓存
+* 作用:
+    - 当通过hibernate种的session调用其API如save, get, update操作后, 会将持久化对象保存到session中, 下次查询就会先查缓存中是否有数据(通过OID判断), 如果有则不会查询数据库. 达到减少数据库访问的目的
+* Session
+    - `clear()`: 清空session缓存
+    - `evict(Object entity)`: 从session缓存中清除指定的实体对象
+    - `refresh()`: 重新查询数据库, 并使用查询结果更新session缓存和快照
+    - `update()`: 针对脱管对象
+    - `saveOrUpdate()`: 如果对象是瞬时态则执行save操作, 如果对象是脱管态则执行update操作, 如果对象是持久态则直接返回
+    - `delete()`: 删除脱管对象, 先删除session缓存, 再删除数据库中的数据
+* Session的快照机制
+    - 持久态根据缓存更新的原理
+        - session操作后, 缓存区和快照区都会更新数据
+        - 当修改数据后, 缓存区的数据会更新
+        - commit之前, 会对比缓存区和快照区数据是否一致
+            - 如果一致, 正常
+            - 如果不一致, 则修改数据库中的值, 并更新快照区数据
 
-### Session的快照机制
+### 二级缓存: SessionFactory
 
-* 持久态根据缓存更新的原理
-    - session操作后, 缓存区和快照区都会更新数据
-    - 当修改数据后, 缓存区的数据会更新
-    - commit之前, 会对比缓存区和快照区数据是否一致
-        - 如果一致, 正常
-        - 如果不一致, 则修改数据库中的值, 并更新快照区数据
+
 
 
 ## 事务管理
