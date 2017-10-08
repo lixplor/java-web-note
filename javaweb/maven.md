@@ -153,83 +153,85 @@ project/
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/
-2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 h
-ttp://maven.apache.org/xsd/maven-4.0.0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <!-- 必须的三要素 -->
-  <groupId>com.companyname.project-group</groupId>
-  <artifactId>project</artifactId>
-  <version>1.0</version>
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 
+    http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
-  <!-- 构建信息 -->
-  <build>
-    <sourceDirectory>C:\MVN\project\src\main\java</sourceDirectory>
-    <scriptSourceDirectory>src/main/scripts</scriptSourceDirectory>
-    <testSourceDirectory>C:\MVN\project\src\test\java</testSourceDirectory>
-    <outputDirectory>C:\MVN\project\target\classes</outputDirectory>
-    <testOutputDirectory>C:\MVN\project\target\test-classes</testOutputDirectory>
-    <resources>
-      <resource>
-        <mergeId>resource-0</mergeId>
-        <directory>C:\MVN\project\src\main\resources</directory>
-      </resource>
-    </resources>
-    <testResources>
-      <testResource>
-        <mergeId>resource-1</mergeId>
-        <directory>C:\MVN\project\src\test\resources</directory>
-      </testResource>
-    </testResources>
-    <directory>C:\MVN\project\target</directory>
-    <finalName>project-1.0</finalName>
+    <modelVersion>4.0.0</modelVersion>
+    <!-- 必须的三要素 -->
+    <groupId>com.companyname.project-group</groupId>
+    <artifactId>project</artifactId>
+    <version>1.0</version>
 
-    <!-- 插件管理 -->
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <artifactId>maven-antrun-plugin</artifactId>
-          <version>1.3</version>
-        </plugin>
-        <plugin>
-          <artifactId>maven-assembly-plugin</artifactId>
-          <version>2.2-beta-2</version>
-        </plugin>
-      </plugins>
-    </pluginManagement>
-  </build>
+    <!-- 构建信息 -->
+    <build>
+        <sourceDirectory>C:\MVN\project\src\main\java</sourceDirectory>
+        <scriptSourceDirectory>src/main/scripts</scriptSourceDirectory>
+        <testSourceDirectory>C:\MVN\project\src\test\java</testSourceDirectory>
+        <outputDirectory>C:\MVN\project\target\classes</outputDirectory>
+        <testOutputDirectory>C:\MVN\project\target\test-classes</testOutputDirectory>
+        <resources>
+            <resource>
+                <mergeId>resource-0</mergeId>
+                <directory>C:\MVN\project\src\main\resources</directory>
+            </resource>
+        </resources>
+        <testResources>
+            <testResource>
+                <mergeId>resource-1</mergeId>
+                <directory>C:\MVN\project\src\test\resources</directory>
+            </testResource>
+        </testResources>
+        <directory>C:\MVN\project\target</directory>
+        <finalName>project-1.0</finalName>
 
-  <!-- 仓库管理 -->
-  <repositories>
-    <repository>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <id>central</id>
-      <name>Maven Repository Switchboard</name>
-      <url>http://repo1.maven.org/maven2</url>
-    </repository>
-  </repositories>
+        <!-- 插件管理 -->
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-antrun-plugin</artifactId>
+                    <version>1.3</version>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-assembly-plugin</artifactId>
+                    <version>2.2-beta-2</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 
-  <!-- 插件仓库 -->
-  <pluginRepositories>
-    <pluginRepository>
-      <releases>
-        <updatePolicy>never</updatePolicy>
-      </releases>
-      <snapshots>
-        <enabled>false</enabled>
-      </snapshots>
-      <id>central</id>
-      <name>Maven Plugin Repository</name>
-      <url>http://repo1.maven.org/maven2</url>
-    </pluginRepository>
-  </pluginRepositories>
+    <!-- 仓库管理 -->
+    <repositories>
+        <repository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>central</id>
+            <name>Maven Repository Switchboard</name>
+            <url>http://repo1.maven.org/maven2</url>
+        </repository>
+    </repositories>
 
-  <!-- 报告生成目录 -->
-  <reporting>
-    <outputDirectory>C:\MVN\project\target/site</outputDirectory>
-  </reporting>
+    <!-- 插件仓库 -->
+    <pluginRepositories>
+        <pluginRepository>
+            <releases>
+                <updatePolicy>never</updatePolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>central</id>
+            <name>Maven Plugin Repository</name>
+            <url>http://repo1.maven.org/maven2</url>
+        </pluginRepository>
+    </pluginRepositories>
+
+    <!-- 报告生成目录 -->
+    <reporting>
+        <outputDirectory>C:\MVN\project\target/site</outputDirectory>
+    </reporting>
 </project>
 ```
 
@@ -388,33 +390,46 @@ mvn package -Pproduct  # 生产环境
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
     http://maven.apache.org/xsd/maven-4.0.0.xsd">
-<modelVersion>4.0.0</modelVersion>
-<groupId>com.companyname.projectgroup</groupId>
-<artifactId>project</artifactId>
-<version>1.0</version>
-<build>
-<plugins>
-   <plugin>
-   <groupId>org.apache.maven.plugins</groupId>
-   <artifactId>maven-antrun-plugin</artifactId>
-   <version>1.1</version>
-   <executions>
-      <execution>
-         <id>id.clean</id>
-         <phase>clean</phase>
-         <goals>
-            <goal>run</goal>
-         </goals>
-         <configuration>
-            <tasks>
-               <echo>clean phase</echo>
-            </tasks>
-         </configuration>
-      </execution>     
-   </executions>
-   </plugin>
-</plugins>
-</build>
+
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.companyname.projectgroup</groupId>
+    <artifactId>project</artifactId>
+    <version>1.0</version>
+
+    <build>
+        <plugins>
+            <!-- maven 编译插件 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <!-- 配置JDK版本 -->
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+            <!-- maven ant插件 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.1</version>
+                <executions>
+                    <execution>
+                        <id>id.clean</id>
+                        <phase>clean</phase>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <echo>clean phase</echo>
+                            </tasks>
+                        </configuration>
+                    </execution>     
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
 ```
 
@@ -498,36 +513,37 @@ mvn clean
 
 ```xml
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-   http://maven.apache.org/maven-v4_0_0.xsd">
-   <modelVersion>4.0.0</modelVersion>
-   <groupId>com.companyname.bank</groupId>
-   <artifactId>consumerBanking</artifactId>
-   <packaging>jar</packaging>
-   <version>1.0-SNAPSHOT</version>
-   <name>consumerBanking</name>
-   <url>http://maven.apache.org</url>
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+    http://maven.apache.org/maven-v4_0_0.xsd">
 
-   <!-- 所有依赖 -->
-   <dependencies>
-      <!-- 单个依赖 -->
-      <dependency>
-         <groupId>junit</groupId>
-         <artifactId>junit</artifactId>
-         <version>3.8.1</version>
-         <scope>test</scope>
-      </dependency>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.companyname.bank</groupId>
+    <artifactId>consumerBanking</artifactId>
+    <packaging>jar</packaging>
+    <version>1.0-SNAPSHOT</version>
+    <name>consumerBanking</name>
+    <url>http://maven.apache.org</url>
 
-      <!-- 单个依赖 -->
-      <dependency>
-         <groupId>ldapjdk</groupId>
-         <artifactId>ldapjdk</artifactId>
-         <scope>system</scope>
-         <version>1.0</version>
-         <systemPath>${basedir}\src\lib\ldapjdk.jar</systemPath>
-      </dependency>
-   </dependencies>
+    <!-- 所有依赖 -->
+    <dependencies>
+        <!-- 单个依赖 -->
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>3.8.1</version>
+            <scope>test</scope>
+        </dependency>
+
+        <!-- 单个依赖 -->
+        <dependency>
+            <groupId>ldapjdk</groupId>
+            <artifactId>ldapjdk</artifactId>
+            <scope>system</scope>
+            <version>1.0</version>
+            <systemPath>${basedir}\src\lib\ldapjdk.jar</systemPath>
+        </dependency>
+    </dependencies>
 
 </project>
 ```
@@ -748,4 +764,125 @@ pom.xml
 mvn tomcat7:deploy    # 首次部署时使用
 mvn tomcat7:undeploy  # 取消部署
 mvn tomcat7:redeploy  # 再次部署时使用
+```
+
+
+## maven项目模块化
+
+* 模块的聚合
+    - maven提供模块化开发方式, 可以将一个项目分为多个子maven项目, 再由一个专门负责聚合的maven项目来聚合这些子项目
+    - 聚合模块的要求
+        - 聚合模块必须也是一个maven项目, 但只有pom.xml, 没有src等目录
+        - 打包方式为pom
+        - 在聚合模块的pom.xml中加入`<modules>`和`<module>`标签来引入子模块. 每个module的值都是相对于当前pom.xml的相对路径, 子模块所处的目录应与artifactId一致
+        - 聚合模块的版本要和子模块一致
+        - 习惯上将聚合模块放在项目目录最顶层, 子模块作为子目录
+* 模块的继承
+    - 多个模块可能有共同的依赖, 可以采取模块继承的方式共用相同的依赖, 避免下载重复的依赖
+    - 继承模块的要求
+        - 在模块的pom.xml中添加`<parent>`标签引入父模块
+* IDE中创建maven多模块项目
+    - IDEA
+        - 先创建父项目: 创建一个maven项目, 不选archetype
+        - 建好该项目后, 创建子项目:
+            - 在该项目名上右键, 新建一个module, 选择maven, 选择archetype. 建好后父项目和子项目的pom.xml中会自动添加相关标签
+            - 重复以上步骤创建其他子项目
+        - 如需添加模块之间的依赖, 添加Module依赖即可
+    - Eclipse
+        - 先创建父项目: 创建一个Maven Project, 跳过archetype, 打包类型选pom
+        - 建好该项目后, 创建子项目:
+            - 创建一个Maven Module, 选择Parent Project为刚创建的父项目, 打包类型正常选(jar或war). 建好后副项目和子项目的pom.xml中会自动添加相关标签
+            - 重复以上步骤创建其他子项目
+        - 如需添加模块之间的依赖, 在项目右键, maven, Add dependency
+
+
+* 子父模块pom.xml配置演示
+
+```xml
+<!-- 父模块的pom.xml -->
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.lixplor</groupId>
+    <artifactId>maven-module-demo</artifactId>
+    <packaging>pom</packaging>
+    <version>1.0-SNAPSHOT</version>
+
+    <!-- 声明子模块 -->
+    <modules>
+        <module>submodule1</module>
+        <module>submodule2</module>
+    </modules>
+
+</project>
+```
+
+```xml
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <!-- 声明父模块 -->
+    <parent>
+        <artifactId>maven-module-demo</artifactId>
+        <groupId>com.lixplor</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>sub-module-1</artifactId>
+    <packaging>war</packaging>
+    <name>sub-module-1 Maven Webapp</name>
+    <url>http://maven.apache.org</url>
+
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>3.8.1</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>sub-module-1</finalName>
+    </build>
+</project>
+```
+
+```xml
+<project xmlns="http://maven.apache.org/POM/4.0.0" 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+
+    <!-- 声明父模块 -->
+    <parent>
+        <artifactId>maven-module-demo</artifactId>
+        <groupId>com.lixplor</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <modelVersion>4.0.0</modelVersion>
+    <artifactId>sub-module-2</artifactId>
+    <packaging>war</packaging>
+    <name>sub-module-2 Maven Webapp</name>
+    <url>http://maven.apache.org</url>
+
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>3.8.1</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <finalName>sub-module-2</finalName>
+    </build>
+</project>
+
 ```

@@ -367,8 +367,8 @@ factory.close();
 ## 缓存
 
 * 缓存: 内存中存储数据的空间, 用于提升获取数据的效率
-* 一级缓存: 自带, 不可取消. 生命周期与session一致, 是session级别的缓存
-* 二级缓存: 默认没有开启, 需要配置开启. 二级缓存可以再多个session中共享数据, 是sessionFactory级别的缓存
+* 一级缓存: 自带, 不可取消. 生命周期与session一致, 是session级别的缓存. 属于事务缓存
+* 二级缓存: 默认没有开启, 需要配置开启. 二级缓存可以再多个session中共享数据, 是sessionFactory级别的缓存. 属于进程缓存
 
 ### 一级缓存: Session
 
@@ -394,7 +394,14 @@ factory.close();
 
 ### 二级缓存: SessionFactory
 
-
+* 二级缓存分为2种:
+    - 内置缓存: Hibernate自带的SessionFactory. 数据是只读的
+    - 外置缓存: 第三方缓存插件, 缓存介质可以是内存或硬盘
+* Hibernate支持的外置缓存插件
+    - EHCache
+    - OpenSymphony
+    - SwarmCache
+    - JBossCache
 
 
 
