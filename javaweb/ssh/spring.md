@@ -57,7 +57,7 @@
 ## 快速入门
 
 * 步骤:
-    - 创建一个Service类
+    - 创建一个Service类, 其中需要依赖Dao, 不直接new而是使用依赖注入的方式初始化
     - 创建`src/applicationContext.xml`, 添加schema约束, 声明Service类的bean
     - 创建工厂, 加载核心配置文件, 获取对象, 调用对象方法
 

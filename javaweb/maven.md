@@ -497,19 +497,27 @@ mvn clean
 
 ## Maven依赖管理
 
-* `<dependencies></dependencies>`: 用于声明依赖的配置
-    - `<dependency></dependency>`: 用于添加一个单独的依赖
-        - `<groupId></groupId>`: 依赖的组织名称
-        - `<artifactId></artifactId>`: 依赖的名称
-        - `<version></version>`: 依赖的版本号
-        - `<scope></scope>`: 依赖的作用范围
+* `<dependencies>`: 用于声明依赖的配置
+    - `<dependency>`: 用于添加一个单独的依赖
+        - `<groupId>`: 依赖的组织名称
+        - `<artifactId>`: 依赖的名称
+        - `<version>`: 依赖的版本号
+        - `<scope>`: 依赖的作用范围
             - `compile`: 默认值, 编译范围内有效, 编译和打包都使用, 适用于所有阶段
             - `provided`: 类似compile, 编译和测试有效, 打包不会使用. 期望JDK, 容器或使用者已经提供这个依赖, 比如打包上传到Tomcat中, Tomcat已经存在了Servlet.jar
             - `runtime`: 只在运行时使用, 编译时候不使用. 适用于运行和测试阶段
             - `test`: 只在测试时使用, 用于编译和运行测试代码, 编译和打包都不使用, 不会随项目发布
             - `system`: 类似provided, 需要显式提供(手动导入)包含依赖的jar, maven不会再仓库中寻找
-            - `import`: 只能用于`<dependencyManagement></dependencyManagement>`标签中, 用于从其他pom中导入dependency的配置
-        - `<systemPath></systemPath>`: 依赖文件的所在路径, 一般配合`system`的scope使用
+            - `import`: 只能用于`<dependencyManagement>`标签中, 用于从其他pom中导入dependency的配置
+        - `<systemPath><`: 依赖文件的所在路径, 一般配合`system`的scope使用
+        - `<exclusions>`: 排除依赖, 用于避免多个依赖内部依赖的版本不同, 导致的依赖冲突问题
+            - `<exclusion>`: 声明一个要被排除的依赖
+                - `<groupId>`: 依赖的组织名称
+                - `<artifactId>`: 依赖的名称
+* `<dependencyManagement>`: 对依赖进行版本管理
+    - 如果`<dependencies>`中的`<dependency>`没有声明`<version>`, 则会到`<dependencyManagement>`中寻找
+    - 如果`<dependencies>`中的`<dependency>`已经声明`<version>`, 则会以`<dependency>`自己声明的版本为准
+
 
 ```xml
 <project xmlns="http://maven.apache.org/POM/4.0.0"
@@ -781,6 +789,12 @@ mvn tomcat7:redeploy  # 再次部署时使用
     - 多个模块可能有共同的依赖, 可以采取模块继承的方式共用相同的依赖, 避免下载重复的依赖
     - 继承模块的要求
         - 在模块的pom.xml中添加`<parent>`标签引入父模块
+* 聚合和继承
+    - 聚合是依靠父模块来聚合多个子模块
+    - 继承是将公共的配置放在父模块中, 供子模块使用
+* 多模块拆分规则:
+    - 按业务模块拆分: 即每个功能一个模块
+    - 按层拆分: 即每个层一个模块
 * IDE中创建maven多模块项目
     - IDEA
         - 先创建父项目: 创建一个maven项目, 不选archetype
