@@ -54,10 +54,10 @@
 ```
 
 
-## 快速入门
+## Spring的依赖注入(DI)
 
 * 步骤:
-    - 创建一个Service类, 其中需要依赖Dao, 不直接new而是使用依赖注入的方式初始化
+    - 假设有一个Service类, 其中需要依赖Dao对象, 不直接new而是使用依赖注入的方式初始化
     - 创建`src/applicationContext.xml`, 添加schema约束, 声明Service类的bean
     - 创建工厂, 加载核心配置文件, 获取对象, 调用对象方法
 
@@ -65,11 +65,10 @@
 配置文件: applicationContext.xml
 -------------------------------
 <?xml version="1.0" encoding="UTF-8" ?>
-<beans
-    xmlns="http://www.springframework.org/schema/beans"
+<beans xmlns="http://www.springframework.org/schema/beans"
     xmlns:xsi="http://www.w3.org/2001/XMLShema-instance"
     xsi:shemaLocation="http://www.springframework.org/schema/beans
-        http://www.springframework.org/schema/beans/spring-beans.xsd">
+    http://www.springframework.org/schema/beans/spring-beans.xsd">
 
     <!-- 使用bean标签 -->
     <bean id="userDao" class="xxx.package.UserDao"/>
@@ -94,13 +93,13 @@ usi.saveUser();
 ```
 
 
-## 工厂类
+## 加载配置文件的工厂类
 
 * 早期使用`BeanFactory`, 现已由`ApplicationContext`代替
 * `ApplicationContext`接口
     - 用于获取Bean对象
     - 有2个实现类:
-        - `ClassPathXmlApplicationContext`: 加载类路径下的Spring配置文件
+        - `ClassPathXmlApplicationContext`: 加载类路径(class)下的Spring配置文件
         - `FileSystemXmlApplicationContext`: 加载本地磁盘的Spring配置文件
 * 2者区别
     - BeanFactory使用延迟加载, 第一次调用`getBean()`时才会初始化Bean
@@ -109,7 +108,7 @@ usi.saveUser();
 
 ## applicationContext.xml详解
 
-* `<bean>`标签
+* `<bean>`标签: 声明一个要被注入的对象
     - `id`: 起到区分作用, 不允许出现特殊符号
     - `class`: 要创建对象的完整类名
     - `name`: 和id类似, 可以使用特殊符号
@@ -834,55 +833,55 @@ applicationContext.xml
    <bean id="javaCollection" class="com.tutorialspoint.JavaCollection">
 
    <!-- Passing bean reference  for java.util.List -->
-         <property name="addressList">
+        <property name="addressList">
             <list>
-               <ref bean="address1"/>
-               <ref bean="address2"/>
-               <value>Pakistan</value>
+                <ref bean="address1"/>
+                <ref bean="address2"/>
+                <value>Pakistan</value>
             </list>
-         </property>
+        </property>
 
-      <!-- results in a setAddressList(java.util.List) call -->
-      <property name="addressList">
-         <list>
-            <value>INDIA</value>
-            <value>Pakistan</value>
-            <value>USA</value>
-            <value>USA</value>
-         </list>
-      </property>
+        <!-- results in a setAddressList(java.util.List) call -->
+        <property name="addressList">
+            <list>
+                <value>INDIA</value>
+                <value>Pakistan</value>
+                <value>USA</value>
+                <value>USA</value>
+            </list>
+        </property>
 
-      <!-- results in a setAddressSet(java.util.Set) call -->
-      <property name="addressSet">
+        <!-- results in a setAddressSet(java.util.Set) call -->
+        <property name="addressSet">
          <set>
             <value>INDIA</value>
             <value>Pakistan</value>
             <value>USA</value>
             <value>USA</value>
         </set>
-      </property>
+        </property>
 
-      <!-- results in a setAddressMap(java.util.Map) call -->
-      <property name="addressMap">
-         <map>
-            <entry key="1" value="INDIA"/>
-            <entry key="2" value="Pakistan"/>
-            <entry key="3" value="USA"/>
-            <entry key="4" value="USA"/>
-         </map>
-      </property>
+        <!-- results in a setAddressMap(java.util.Map) call -->
+        <property name="addressMap">
+            <map>
+                <entry key="1" value="INDIA"/>
+                <entry key="2" value="Pakistan"/>
+                <entry key="3" value="USA"/>
+                <entry key="4" value="USA"/>
+            </map>
+        </property>
 
-      <!-- results in a setAddressProp(java.util.Properties) call -->
-      <property name="addressProp">
-         <props>
-            <prop key="one">INDIA</prop>
-            <prop key="two">Pakistan</prop>
-            <prop key="three">USA</prop>
-            <prop key="four">USA</prop>
-         </props>
-      </property>
+        <!-- results in a setAddressProp(java.util.Properties) call -->
+        <property name="addressProp">
+            <props>
+                <prop key="one">INDIA</prop>
+                <prop key="two">Pakistan</prop>
+                <prop key="three">USA</prop>
+                <prop key="four">USA</prop>
+            </props>
+        </property>
 
-   </bean>
+    </bean>
 
 </beans>
 ```
@@ -985,7 +984,8 @@ applicationContext.xml
 
    <!-- 使用autowire=byName进行属性自动装配, 免去声明依赖的属性 -->
    <bean id="textEditor" class="com.tutorialspoint.TextEditor" autowire="byName">
-      <property name="name" value="Generic Text Editor" />
+        <!-- 这里的spellChecker属性会自动通过名称寻找并装配, 不用再写了 -->
+        <property name="name" value="Generic Text Editor" />
    </bean>
 
    <!-- 因为这个bean的id为spellChecker与TextEditor类中的依赖成员属性的名称相同, 所以注入这个bean -->
@@ -1086,6 +1086,7 @@ applicationContext.xml
 
     <!-- 使用autowire=byType进行属性自动装配, 免去声明依赖的属性 -->
     <bean id="textEditor" class="com.tutorialspoint.TextEditor" autowire="byType">
+        <!-- 这里的spellChecker通过类型自动判断并装配, 不用再写了 -->
         <property name="name" value="Generic Text Editor" />
     </bean>
 
@@ -1179,21 +1180,20 @@ applicationContext.xml
     xsi:schemaLocation="http://www.springframework.org/schema/beans
     http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 
-   <!-- 普通定义方式, 需要声明依赖spellChecker的构造函数
-   <bean id="textEditor" class="com.tutorialspoint.TextEditor">
+    <!-- 普通定义方式, 需要声明依赖spellChecker的构造函数
+    <bean id="textEditor" class="com.tutorialspoint.TextEditor">
       <constructor-arg  ref="spellChecker" />
       <constructor-arg  value="Generic Text Editor"/>
-   </bean>
-   -->
+    </bean>
+    -->
 
-   <!-- 由于使用autowire=constructor自动装配, 免去声明spellChecker构造函数, 会自动寻找对应的构造函数来注入 -->
-   <bean id="textEditor" class="com.tutorialspoint.TextEditor" autowire="constructor">
-      <constructor-arg value="Generic Text Editor"/>
-   </bean>
+    <bean id="textEditor" class="com.tutorialspoint.TextEditor" autowire="constructor">
+        <!-- 由于使用autowire=constructor自动装配, 免去声明spellChecker构造函数, 会自动寻找对应的构造函数来注入 -->
+        <constructor-arg value="Generic Text Editor"/>
+    </bean>
 
-   <!-- Definition for spellChecker bean -->
-   <bean id="spellChecker" class="com.tutorialspoint.SpellChecker">
-   </bean>
+    <!-- Definition for spellChecker bean -->
+    <bean id="spellChecker" class="com.tutorialspoint.SpellChecker"></bean>
 
 </beans>
 ```
