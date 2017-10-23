@@ -1,5 +1,6 @@
 # Spring Boot
 
+* [完整官方文档](https://docs.spring.io/spring-boot/docs/current-SNAPSHOT/reference/htmlsingle/#getting-started)
 * Spring Boot内置了容器, 所以不再需要安装Tomcat或Jetty
 * Spring Boot主要包含4个方面
     - starter
