@@ -139,6 +139,18 @@ ${(5 + 8) / 2}
         - `(user.friend.age)!0`
         - `(user.friend.name)??`
 
+
+### 处理空白
+
+* 模板中的空白字符可以通过2种方式处理
+    - 剥离空白
+        - 开启指令: `<#ftl strip_whitespace=true>`
+        - 效果: 对所有模板剥离空白, 具体看文档
+    - compress指令
+        - `<#compress>中间的代码会压缩掉空白字符</#compress>`
+        - 效果: 具体看文档
+
+
 ### 预定义指令
 
 * FTL标签(指令)
@@ -318,6 +330,29 @@ ${x}
 
 ```
 
+#### 命名空间
+
+* 命名空间用于区分同名的变量或宏
+* 通常可以在一个`.ftl`文件中专门定义变量或宏, 作为一个库, 以便引用
+* 使用`<#import "ftl路径" as 命名空间名称>`来引入一个ftl文件中定义的变量或宏
+    - 注意import和include是不同的
+* 使用`命名空间名称.变量`或`命名空间名称.宏`来调用
+
+```
+<#import "/lib/my_test.ftl" as my>  引入命名空间
+<#assign mail="fred@acme.com">      本文件中定义的同名变量
+
+使用命名空间中的宏
+<@my.copyright date="1999-2002"/>
+
+以下两个变量不会冲突
+${my.mail}
+${mail}
+
+如果想修改命名空间中定义的变量或宏也是可以的, 用in
+<#assign mail="jsmith@other.com" in my>
+```
+
 #### 定义函数
 
 * function指令
@@ -384,6 +419,22 @@ Anything.
 Anything.
 Anything.
 ```
+
+
+### 模板配置
+
+* 使用ftl指令进行配置
+    - 语法: `<#ftl 参数=值 参数=值>`
+    - 参数:
+        - `encoding`: 模板的编码
+        - `strip_whitespace`: 是否剥离空白, 值为true或false
+        - `strip_text`: 是否移除模板中的顶级文本, 值为true或false
+        - `strict_syntax`: 是否开启严格语法. 值为true或false
+        - `ns_prefixeds`: 命名空间的前缀
+        - `attributes`: 关联模板属性
+    - 使用中括号替换尖括号
+        - 在任意模板的开头定义一个`[#ftl]`即可
+        - 开启中括号后所有模板指令不能再使用尖括号
 
 
 
