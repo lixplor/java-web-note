@@ -47,7 +47,7 @@ server {
     location / {
         root        html;
         # 反向代理服务器URL
-        proxy pass  http://server_lb;
+        proxy_pass  http://server_lb;
         index       index.html index.htm;
     }
 
