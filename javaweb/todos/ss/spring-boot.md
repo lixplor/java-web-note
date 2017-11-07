@@ -34,7 +34,7 @@
     - `spring --version`
 
 
-## 创建Spring Boot项目
+## 创建简单的Spring Boot项目
 
 * [官网](https://projects.spring.io/spring-boot/)
 
@@ -119,3 +119,145 @@ public class HelloController {
 2017-10-21 22:55:41.260  INFO 24956 --- [           main] s.b.c.e.t.TomcatEmbeddedServletContainer : Tomcat started on port(s): 8080 (http)
 2017-10-21 22:55:41.270  INFO 24956 --- [           main] c.l.site.controller.HelloController      : Started HelloController in 2.082 seconds (JVM running for 2.817)
 ```
+
+
+## 基础
+
+### 打包方式
+
+* `jar`包方式:
+    - 将`pom.xml`中的`<packaging>`参数修改为`jar`
+    - Spring Boot项目由于内置了web服务器, 因此可以单独打为一个jar包, 使用`java -jar xxx.jar`方式作为一个应用运行
+    - 操作:
+        - 定义`Application`类作为应用入口, 在类上使用`@SpringBootApplication`注解
+        - 类中定义`main()`方法, 执行`SpringApplication.run(Application.class, args);`来启动应用
+* `war`包方式:
+    - 将`pom.xml`中的`<packaging>`参数修改为`jar`
+    - 也可以选择打为war包, 将程序放入单独的web服务器中运行, 但需要做一些额外配置
+    - 操作:
+        - `Application`
+            - 定义`Application`类作为应用入口, 在类上使用`@SpringBootApplication`注解
+            - 类中定义`main()`方法, 执行`SpringApplication.run(Application.class, args);`来启动应用
+        - `SpringBootStartAplication`
+            - 定义`SpringBootStartAplication`类, 继承`SpringBootServletInitializer`
+            - 重写`SpringApplicationBuilder configure(SpringApplicationBuilder builder)`方法, 其中执行`return builder.sources(App.class);`
+        - 在`pom.xml`中的`spring-boot-starter-web`中将web服务器插件移除, 并添加额外的`javax.servlet-api`依赖
+* 执行`mvn clean package`打包
+
+#### jar包方式
+
+```xml
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.xxx</groupId>
+  <artifactId>xxx</artifactId>
+  <packaging>jar</packaging>
+  <version>1.0-SNAPSHOT</version>
+  <name>site Maven Webapp</name>
+  <url>http://maven.apache.org</url>
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>1.5.8.RELEASE</version>
+  </parent>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-freemarker</artifactId>
+    </dependency>
+  </dependencies>
+  <build>
+    <finalName>xxx</finalName>
+  </build>
+</project>
+```
+
+```java
+@SpringBootApplication
+@EnableAutoConfiguration
+public class App {
+
+    // 运行入口
+    public static void main(String[] args) {
+        SpringApplication.run(App.class, args);
+    }
+}
+```
+
+
+#### war包方式
+
+```xml
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.xxx</groupId>
+  <artifactId>xxx</artifactId>
+  <packaging>war</packaging>
+  <version>1.0-SNAPSHOT</version>
+  <name>site Maven Webapp</name>
+  <url>http://maven.apache.org</url>
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>1.5.8.RELEASE</version>
+  </parent>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-web</artifactId>
+      <!-- 移除嵌入式tomcat插件 -->
+      <exclusions>
+        <exclusion>
+          <groupId>org.springframework.boot</groupId>
+          <artifactId>spring-boot-starter-tomcat</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-freemarker</artifactId>
+    </dependency>
+    <!-- 添加servlet api -->
+    <dependency>
+      <groupId>javax.servlet</groupId>
+      <artifactId>javax.servlet-api</artifactId>
+      <version>3.1.0</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+  <build>
+    <finalName>xxx</finalName>
+  </build>
+</project>
+```
+
+```java
+@SpringBootApplication
+@EnableAutoConfiguration
+public class App {
+
+    // 运行入口
+    public static void main(String[] args) {
+        SpringApplication.run(App.class, args);
+    }
+}
+
+public class SpringBootStartApplication extends SpringBootServletInitializer {
+
+    @Override
+    protected SpringApplicationBuilder configure(SpringApplicationBuilder builder) {
+        return builder.sources(App.class);
+    }
+}
+```
+
