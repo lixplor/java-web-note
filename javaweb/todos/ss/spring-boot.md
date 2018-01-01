@@ -261,3 +261,33 @@ public class SpringBootStartApplication extends SpringBootServletInitializer {
 }
 ```
 
+
+### 模板引擎热部署
+
+* 加入springboot的maven插件
+
+```xml
+<buid>
+  <plugin>
+    <plugin>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-maven-plugin</artifactId>
+      <configuration>
+        <fork>true<fork>
+      </configuration>
+    </plugin>
+  </plugin>
+</build>
+```
+
+* 在`application.properties`中禁用模板引擎的缓存
+
+```properties
+spring.freemarker.cache=false
+spring.freemarker.settings.template_update_delay=0
+```
+
+* 修改IDEA设置
+    - 打开`Settings`, `Build, Execution, Deployment`, `Compliler`, 勾选`Build project automatically`
+    - 打开`Help`, `Find Action...`, 输入`Registry...`, 找到`compiler.automake.allow.when.app.running`勾选上
+    - 重启IDEA
