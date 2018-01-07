@@ -35,3 +35,19 @@
 * sqlplus: 自带客户端
     - 登录: `sqlplus 用户/密码@IP:1521/库名`
     - 退出: `quit`或`exit`
+
+
+## 修改字符集
+
+```sql
+# 查看当前字符集
+select userenv('language') from dual;
+
+# 默认是AMERICAN_AMERICA.ZHS16GBK
+```
+
+* 将查询到的AMERICAN_AMERICA.ZHS16GBK添加到环境变量中
+    - 创建环境变量`NLS_LANG`, 值为`AMERICAN_AMERICA.ZHS16GBK`
+
+
+## 语法
