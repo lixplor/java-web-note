@@ -49,6 +49,38 @@ select userenv('language') from dual;
 * 将查询到的AMERICAN_AMERICA.ZHS16GBK添加到环境变量中
     - 创建环境变量`NLS_LANG`, 值为`AMERICAN_AMERICA.ZHS16GBK`
 
+## 数据备份和恢复
+
+* 整库操作
+
+```bash
+# 整库导出
+exp 用户名/密码 file=导出文件路径 full=y
+
+# 整库导入
+imp 用户名/密码 file=导入文件路径 full=y
+```
+
+* 按用户操作
+
+```bash
+# 按用户导出
+exp 用户名/密码 owner=用户名 file=导出文件路径
+
+# 按用户导入
+imp 用户名/密码 fromuser=用户名 file=导入文件路径
+```
+
+* 按表操作
+
+```sql
+# 按表导出
+exp 用户名/密码 file=导出文件路径 tables=表名1,表名2,...
+
+# 按表导入
+imp 用户名/密码 file=导入文件路径 tables=表名1, 表名2,...
+```
+
 
 ## 语法
 
